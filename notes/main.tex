@@ -1,0 +1,67 @@
+\documentclass[12pt,titlepage]{article}
+\usepackage{cmap}
+\usepackage[T2A]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{authblk}
+\usepackage{enumitem}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\usepackage[margin=2cm]{geometry}
+\usepackage{tikz}
+\usepackage[titles]{tocloft}
+\usepackage{hyperref}
+\usepackage{mathrsfs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{mathtools}
+\usepackage{twemojis}
+
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue}
+\usetikzlibrary{math}
+
+\newcommand{\E}{\operatorname{\mathbb{E}}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\var}{\operatorname{Var}}
+\newcommand{\cov}{\operatorname{Cov}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\im}{\operatorname{im}}
+\newcommand{\tr}{\operatorname{trace}}
+\newcommand{\I}{\operatorname{\mathbb{I}}}
+\renewcommand{\P}{\operatorname{\mathbb{P}}}
+
+\renewcommand{\qedsymbol}{\twemoji{poop}}
+
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}[section]
+
+\newtheorem{claim}{Claim}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+
+\theoremstyle{plain}
+\newtheorem{lemma}{Lemma}[section]
+
+\begin{titlepage}
+    \title{Techinical details on the implementation}
+    \author{Unknown}
+    \affil{GRABEZH\textsuperscript{\texttrademark}}
+    \date{\today}
+\end{titlepage}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Heap asymptotics}
+\input{heap_asymptotics.tex}
+
+\section{Linear regression} \label{sec:linear_regression}
+\input{linear_regression.tex}
+
+\end{document}

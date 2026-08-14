@@ -1,0 +1,58 @@
+import { Item } from "./types.js";
+export class DatabaseManager {
+    db_driver;
+    constructor(db_driver) {
+        this.db_driver = db_driver;
+    }
+    async init_tables() {
+        await this.db_driver.run(`CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL UNIQUE);`);
+        await this.db_driver.run(`CREATE TABLE items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_id INTEGER NOT NULL,
+        box_id INTEGER NOT NULL,
+        expiration_date INTEGER NOT NULL,
+        status INTEGER NOT NULL,
+        add_date INTEGER NOT NULL,
+        remove_date INTEGER DEFAULT NULL,
+        FOREIGN KEY (category_id) REFERENCES categories(id));`);
+    }
+    async get_category_id(category) {
+        const category_id = await this.db_driver.query(`SELECT id 
+            FROM categories 
+            WHERE title = "${category}";`, (obj) => obj.id);
+        if (category_id.length === 0) {
+            throw new Error(`Category "${category}" does not exist.`);
+        }
+        return category_id[0];
+    }
+    async add_categories(...title) {
+        const rows = title.map(t => `("${t}")`).join(", ");
+        await this.db_driver.run(`INSERT INTO categories 
+            (title) 
+            VALUES ${rows};`);
+    }
+    async get_categories() {
+        return await this.db_driver.query(`SELECT title 
+            FROM categories 
+            ORDER BY title ASC;`, (obj) => obj.title);
+    }
+    async add_item(category, item) {
+        await this.db_driver.run(`INSERT INTO items 
+            (category_id, box_id, expiration_date, status, add_date) 
+            VALUES (${await this.get_category_id(category)}, ${item.box_id}, ${item.expiration_date}, ${item.status}, ${Date.now()});`);
+    }
+    async remove_item(id) {
+        await this.db_driver.run(`UPDATE items
+            SET remove_date = ${Date.now()}
+            WHERE id = "${id}";`);
+    }
+    async get_items(category) {
+        return await this.db_driver.query(`SELECT * 
+            FROM items 
+            WHERE category_id = ${await this.get_category_id(category)} 
+            AND remove_date IS NULL;`, Item.from);
+    }
+}
+//# sourceMappingURL=main.js.map
