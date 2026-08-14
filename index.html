@@ -11,145 +11,129 @@
 
 <body>
     <header>
-        <div class="container">
+        <div class="header-content">
             <h1>📦 <span data-locale="page_title_intake"></span></h1>
-        </div>
-        <div class="container">
             <nav class="nav-tabs">
                 <button class="nav-tab active" data-page="intake" data-locale="page_title_intake"></button>
-                <button class="nav-tab" data-page="storage" data-locale="header_storage"></button>
                 <button class="nav-tab" data-page="backup" data-locale="page_title_restore"></button>
                 <button class="nav-tab" data-page="stats" data-locale="page_title_stats"></button>
             </nav>
         </div>
     </header>
 
-    <main class="container">
-        <!-- ITEM INTAKE PAGE -->
-        <div id="intake" class="page active">
-            <div class="card">
-                <h2 data-locale="header_main"></h2>
-                <form id="intakeForm">
-                    <div class="form-group">
-                        <label for="categoryInput" data-locale="category_input"></label>
-                        <input type="text" id="categoryInput" list="categoryDatalist" placeholder="" data-locale-placeholder="item_placeholder" required>
-                        <datalist id="categoryDatalist"></datalist>
+    <div class="main-wrapper">
+        <main class="container">
+            <!-- ITEM INTAKE PAGE -->
+            <div id="intake" class="page active">
+                <div class="card">
+                    <h2 data-locale="header_main"></h2>
+                    <form id="intakeForm">
+                        <div class="form-group">
+                            <label for="categoryInput" data-locale="category_input"></label>
+                            <input type="text" id="categoryInput" list="categoryDatalist" placeholder="" data-locale-placeholder="item_placeholder" required>
+                            <datalist id="categoryDatalist"></datalist>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="expiryDate" data-locale="label_expiry"></label>
+                            <input type="date" id="expiryDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="boxNumber" data-locale="label_box"></label>
+                            <input type="number" id="boxNumber" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="status" data-locale="label_status"></label>
+                            <select id="status" required>
+                                <option value="0" data-locale="status_0"></option>
+                                <option value="1" data-locale="status_1"></option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-primary" data-locale="register_item_btn"></button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2 data-locale="add_category_btn"></h2>
+                    <form id="categoryForm">
+                        <div class="form-group">
+                            <input type="text" data-locale-placeholder="category_input" id="newCategory" required>
+                        </div>
+                        <button type="submit" class="btn-primary" data-locale="add_category_btn"></button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2> <span id="itemCount"></span> </h2>
+                    <div id="itemsList" class="items-list"></div>
+                    
+                    <div class="pagination-controls" id="paginationControls">
+                        <button class="btn-pagination" id="prevPageBtn">⬅️</button>
+                        <span id="pageIndicator" class="page-info"></span>
+                        <button class="btn-pagination" id="nextPageBtn">➡️</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div id="intakeLog" class="log-area">
+                        <div class="log-entry"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BACKUP & RESTORE PAGE -->
+            <div id="backup" class="page">
+                <div class="card">
+                    <h2 data-locale="header_restore">Data Management</h2>
+                    <p style="color: #7f8c8d; margin-bottom: 20px;"></p>
+                    
+                    <div class="button-group">
+                        <button class="btn-success" id="exportBtn" data-locale="btn_export"></button>
+                        <button class="btn-secondary" id="importBtn" data-locale="btn_import"></button>
                     </div>
 
+                    <input type="file" id="importFile" style="display: none;" accept=".json,.sql" />
+                </div>
+
+                <div class="card">
+                    <div id="backupLog" class="log-area">
+                        <div class="log-entry" data-locale="initial_log"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATISTICS PAGE -->
+            <div id="stats" class="page">
+                <div class="card">
+                    <h2 data-locale="page_title_stats"></h2>
+                    <p style="color: #7f8c8d; margin-bottom: 20px;">Coming soon: Linear regression analysis and inventory trends</p>
+                    
                     <div class="form-group">
-                        <label for="expiryDate" data-locale="label_expiry"></label>
-                        <input type="date" id="expiryDate" required>
+                        <label for="statsDate" data-locale="label_date_filter">Analysis Date</label>
+                        <input type="date" id="statsDate">
                     </div>
 
-                    <div class="form-group">
-                        <label for="boxNumber" data-locale="label_box"></label>
-                        <input type="number" id="boxNumber" required>
+                    <button class="btn-primary" id="analyzeBtn" data-locale="register_item_btn">Run Analysis</button>
+                </div>
+
+                <div class="card">
+                    <div id="statsLog" class="log-area">
+                        <div class="log-entry" data-locale="initial_log">Statistics module ready...</div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="status" data-locale="label_status"></label>
-                        <select id="status" required>
-                            <option value="0" data-locale="status_0"></option>
-                            <option value="1" data-locale="status_1"></option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn-primary" data-locale="register_item_btn"></button>
-                </form>
-            </div>
-
-            <div class="card">
-                <h2 data-locale="add_category_btn"></h2>
-                <form id="categoryForm">
-                    <div class="form-group">
-                        <label for="newCategory" data-locale="category_input"></label>
-                        <input type="text" id="newCategory" required>
-                    </div>
-                    <button type="submit" class="btn-primary" data-locale="add_category_btn"></button>
-                </form>
-            </div>
-
-            <div class="card">
-                <div id="intakeLog" class="log-area">
-                    <div class="log-entry" data-locale="initial_log"></div>
                 </div>
             </div>
-        </div>
+        </main>
 
-        <!-- STORAGE PAGE -->
-        <div id="storage" class="page">
-            <div class="card">
-                <h2 data-locale="header_storage"></h2>
-                <div class="form-group">
-                    <label for="storageCategory" data-locale="category_input"></label>
-                    <select id="storageCategory" required>
-                        <option value="">All Categories</option>
-                    </select>
-                </div>
-                <button class="btn-primary" id="loadItems" data-locale="register_item_btn"></button>
-            </div>
-
-            <div class="card">
-                <h2><span data-locale="header_storage"></span> (<span id="itemCount" data-locale="count_label">0</span>)</h2>
-                <div id="itemsList" class="items-list"></div>
-                
-                <div class="pagination-controls" id="paginationControls">
-                    <button class="btn-pagination" id="prevPageBtn">⬅️</button>
-                    <span id="pageIndicator" class="page-info" data-locale="page_number">Page 1</span>
-                    <button class="btn-pagination" id="nextPageBtn">➡️</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- BACKUP & RESTORE PAGE -->
-        <div id="backup" class="page">
-            <div class="card">
-                <h2 data-locale="header_restore">Data Management</h2>
-                <p style="color: #7f8c8d; margin-bottom: 20px;"></p>
-                
-                <div class="button-group">
-                    <button class="btn-success" id="exportBtn" data-locale="btn_export"></button>
-                    <button class="btn-secondary" id="importBtn" data-locale="btn_import"></button>
-                </div>
-
-                <input type="file" id="importFile" style="display: none;" accept=".json,.sql" />
-            </div>
-
-            <div class="card">
-                <div id="backupLog" class="log-area">
-                    <div class="log-entry" data-locale="initial_log"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- STATISTICS PAGE -->
-        <div id="stats" class="page">
-            <div class="card">
-                <h2 data-locale="page_title_stats"></h2>
-                <p style="color: #7f8c8d; margin-bottom: 20px;">Coming soon: Linear regression analysis and inventory trends</p>
-                
-                <div class="form-group">
-                    <label for="statsDate" data-locale="label_date_filter">Analysis Date</label>
-                    <input type="date" id="statsDate">
-                </div>
-                
-                <button class="btn-primary" id="analyzeBtn" data-locale="register_item_btn">Run Analysis</button>
-            </div>
-
-            <div class="card">
-                <div id="statsLog" class="log-area">
-                    <div class="log-entry" data-locale="initial_log">Statistics module ready...</div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <footer>
-        <p data-locale="version"></p>
-    </footer>
+        <footer>
+            <p data-locale="version"></p>
+        </footer>
+    </div>
 
     <script type="module">
-        import { HeapTests, debug } from './dist/tests.js';
+        import { HeapTests, DatabaseTests, debug } from './dist/tests.js';
         import { renderPattern, localizeDOM } from './dist/vocab.js';
         import { main } from './dist/index.js';
 
@@ -168,14 +152,6 @@
             });
         });
 
-        // Helper to populate category datalist
-        window.populateCategoryDatalist = function(categories) {
-            const datalist = document.getElementById('categoryDatalist');
-            datalist.innerHTML = categories
-                .map(cat => `<option value="${cat}"></option>`)
-                .join('');
-        };
-
         window.onload = () => {
             localizeDOM();
             main();
@@ -183,6 +159,7 @@
 
         if (debug) {
             HeapTests.run();
+            DatabaseTests.run();
         }
     </script>
 </body>

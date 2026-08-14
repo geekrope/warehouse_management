@@ -23,6 +23,7 @@ const LOCALES = {
         footer_restore: "В КОНТОРУ",
         page_number: "СТРАНИЦА {num}",
         initial_log: "СИСТЕМА ГРАБЕЖ™ НА ШУХЕРЕ...",
+        initial_log_fail: "СИСТЕМА ГРАБЕЖ™ ЗАМОРОСИЛА...",
 
         item_placeholder: "ВЫБЕРИТЕ МАСТЬ...",
         list_item_label: "ДО {date} | СТАТУС {status}",
@@ -43,6 +44,7 @@ const LOCALES = {
 
         log_add_cat: "ЧИРКНУЛИ \"{val}\" В ЖУРНАЛ.",
         log_add_item: "БАЛАНДА {cat} ДО {date} ПРОПИСАНА В ХАТЕ {box}",
+        log_add_fail: "НЕ ОБЕССУДЬ БАЛАНДА НЕ ЗАЕХАЛА",
         log_update_status: "УСТАНОВИЛИ {cat} {meta} СТАТУС {status}",
         log_move_box: "ЭТАПИРОВАЛИ {cat} {meta} В {boxVal} ХАТУ",
         log_delete: "ШВАРКНУЛИ {cat} {meta}",
@@ -50,7 +52,7 @@ const LOCALES = {
         log_export_success: "ГОТОВО НАЧАЛЬНИК",
         log_import_error: "КОСЯК: {message}",
 
-        alert_exists: "МАСТЬ УЖЕ В ЖУРНАЛЕ",
+        log_add_cat_fail: "НЕ УДАЛОСЬ ДОБАВИТЬ МАСТЬ",
         alert_missing: "УКАЖИ МАСТЬ И СРОК",
         confirm_delete: "ПУСКАЕМ {cat} {meta} В РАСХОД?",
         confirm_move: "ЭТАПИРУЕМ {cat} {meta} В {boxVal} ХАТУ?",
@@ -80,6 +82,7 @@ const LOCALES = {
         footer_restore: "BACK TO MAIN",
         page_number: "PAGE {num}",
         initial_log: "STORAGE SYSTEM ACTIVE...",
+        initial_log_fail: "STORAGE SYSTEM ACTIVE FAILED...",
 
         item_placeholder: "SELECT CATEGORY...",
         list_item_label: "UNTIL {date} | STATUS {status}",
@@ -100,6 +103,7 @@ const LOCALES = {
 
         log_add_cat: "ADDED \"{val}\" TO LOG.",
         log_add_item: "ITEM {cat} UNTIL {date} REGISTERED IN BOX {box}",
+        log_add_fail: "FAILED TO ADD ITEM",
         log_update_status: "SET {cat} {meta} STATUS TO {status}",
         log_move_box: "MOVED {cat} {meta} TO BOX {boxVal}",
         log_delete: "DELETED {cat} {meta}",
@@ -107,7 +111,7 @@ const LOCALES = {
         log_export_success: "EXPORT COMPLETE",
         log_import_error: "ERROR: {message}",
 
-        alert_exists: "CATEGORY ALREADY EXISTS",
+        log_add_cat_fail: "FAILED TO ADD CATEGORY: ALREADY EXISTS",
         alert_missing: "SPECIFY CATEGORY AND DATE",
         confirm_delete: "DELETE {cat} {meta}?",
         confirm_move: "MOVE {cat} {meta} TO {boxVal} BOX?",
@@ -137,6 +141,7 @@ const LOCALES = {
         footer_restore: "ВЪ ИЗБУ",
         page_number: "БЕРЕСТА {num}",
         initial_log: "ПОГРЕБЪ СТОИТЪ КРѢПКО...",
+        initial_log_fail: "ПОГРЕБЪ РУХНУЛЪ...",
 
         item_placeholder: "ВЫБЕРИ РОДЪ ЯСТВА...",
         list_item_label: "ДО {date} | {status}",
@@ -158,6 +163,7 @@ const LOCALES = {
 
         log_add_cat: "РОДЪ \"{val}\" ЗАНЕСЕНЪ ВЪ ЛѢТОПИСЬ.",
         log_add_item: "{cat} ДО {date} УЛОЖЕНО НА ПОЛКУ {box}",
+        log_add_fail: "НЕ УДАЛОСЬ ДОБАВИТИ ОБЪЕКТЪ",
         log_update_status: "{cat} {meta} ТЕПЕРЬ: {status}",
         log_move_box: "{cat} {meta} ПЕРЕЛОЖЕНО НА ПОЛКУ {boxVal}",
         log_delete: "{cat} {meta} УБРАНО",
@@ -166,7 +172,7 @@ const LOCALES = {
         log_export_success: "ГОТОВО, БАРИНЪ",
         log_import_error: "БѢДА: {message}",
 
-        alert_exists: "ТАКОЙ РОДЪ УЖЕ ЕСТЬ",
+        log_add_cat_fail: "НЕ УДАЛОСЬ ДОБАВИТИ РОДЪ",
         alert_missing: "УКАЖИ РОДЪ И СРОКЪ",
         confirm_delete: "УБРАТИ {cat} {meta}?",
         confirm_move: "ПЕРЕЛОЖИТИ {cat} {meta} НА ПОЛКУ {boxVal}?",
@@ -196,6 +202,7 @@ const LOCALES = {
         footer_restore: "В МЕНЮ",
         page_number: "СТРАНИЦА {num}",
         initial_log: "СИСТЕМА МОНИТОРИНГА ЗАПУЩЕНА...",
+        initial_log_fail: "В СИСТЕМЕ МОНИТОРИНГА ПРОИЗОШЕЛ СБОЙ...",
 
         item_placeholder: "ВЫБЕРИТЕ КАТЕГОРИЮ...",
         list_item_label: "ДО {date} | СТАТУС {status}",
@@ -216,6 +223,7 @@ const LOCALES = {
 
         log_add_cat: "КАТЕГОРИЯ \"{val}\" ВНЕСЕНА В РЕЕСТР.",
         log_add_item: "ПРОДУКЦИЯ {cat} (СРОК {date}) РАЗМЕЩЕНА В ЯЧЕЙКЕ {box}",
+        log_add_fail: "НЕ УДАЛОСЬ ДОБАВИТЬ ОБЪЕКТ",
         log_update_status: "ОБЪЕКТУ {cat} {meta} ПРИСВОЕН СТАТУС {status}",
         log_move_box: "ОБЪЕКТ {cat} {meta} ПЕРЕМЕЩЕН В ЯЧЕЙКУ {boxVal}",
         log_delete: "ОБЪЕКТ {cat} {meta} УДАЛЕН",
@@ -223,7 +231,7 @@ const LOCALES = {
         log_export_success: "ЭКСПОРТ ВЫПОЛНЕН",
         log_import_error: "ОШИБКА: {message}",
 
-        alert_exists: "КАТЕГОРИЯ УЖЕ ПРИСУТСТВУЕТ В СПИСКЕ",
+        log_add_cat_fail: "НЕ УДАЛОСЬ ДОБАВИТЬ КАТЕГОРИЮ",
         alert_missing: "УКАЖИТЕ КАТЕГОРИЮ И СРОК",
         confirm_delete: "ПОДТВЕРЖДАЕТЕ УДАЛЕНИЕ {cat} {meta}?",
         confirm_move: "ПОДТВЕРЖДАЕТЕ ПЕРЕМЕЩЕНИЕ {cat} {meta} В {boxVal} ?",

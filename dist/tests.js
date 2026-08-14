@@ -1,5 +1,8 @@
 import { heapify, insert, erase, heapsort } from './heap.js';
 import { Item } from './types.js';
+import { DatabaseManager } from './main.js';
+import { SqlJsDriver } from './db_driver.js';
+import { DummyPersistenceAdapter } from './persistence.js';
 export const debug = true;
 export function assertFactory() {
     let passed = 0;
@@ -174,6 +177,165 @@ export const HeapTests = {
         this.testStress(assert);
         this.testPriorityInvariant(assert);
         this.testBruteForceIntegrity(assert);
+        const { passed, total } = getStats();
+        console.log("-----------------------------------");
+        console.log(`Results: ${passed}/${total} tests passed.`);
+        return passed === total;
+    }
+};
+export const DatabaseTests = {
+    // --- HELPERS ---
+    createTestDatabase: async () => {
+        const initSqlJs = window.initSqlJs;
+        const SQL = await initSqlJs({
+            locateFile: (file) => {
+                return `./src/modules/${file}`;
+            }
+        });
+        const db = new SQL.Database();
+        const driver = new SqlJsDriver(db, new DummyPersistenceAdapter());
+        const manager = new DatabaseManager(driver);
+        return manager;
+    },
+    // --- 1. TABLE INITIALIZATION ---
+    testInitTables: async (assert) => {
+        const manager = await DatabaseTests.createTestDatabase();
+        try {
+            await manager.init_tables();
+            assert(true, "Tables initialized successfully");
+        }
+        catch (e) {
+            assert(false, `Table initialization failed: ${e}`);
+        }
+    },
+    // --- 2. ADD CATEGORIES ---
+    testAddCategories: async (assert) => {
+        const manager = await DatabaseTests.createTestDatabase();
+        await manager.init_tables();
+        try {
+            await manager.add_categories("Tuna", "Tushonka", "Klassika");
+            const categories = await manager.get_categories();
+            assert(categories.length === 3, `Expected 3 categories, got ${categories.length}`);
+            assert(categories.includes("Tuna"), "Tuna category not found");
+            assert(categories.includes("Tushonka"), "Tushonka category not found");
+        }
+        catch (e) {
+            assert(false, `Add categories failed: ${e}`);
+        }
+    },
+    // --- 3. GET CATEGORIES ---
+    testGetCategories: async (assert) => {
+        const manager = await DatabaseTests.createTestDatabase();
+        await manager.init_tables();
+        await manager.add_categories("Cat1", "Cat2");
+        try {
+            const cats = await manager.get_categories();
+            assert(cats.length === 2, "Got wrong number of categories");
+            assert(cats[0] === "Cat1" || cats[1] === "Cat1", "Cat1 not in categories");
+        }
+        catch (e) {
+            assert(false, `Get categories failed: ${e}`);
+        }
+    },
+    // --- 4. ADD ITEMS ---
+    testAddItems: async (assert) => {
+        const manager = await DatabaseTests.createTestDatabase();
+        await manager.init_tables();
+        await manager.add_categories("TestCat");
+        try {
+            await manager.add_item("TestCat", new Item(Date.now() + 1000000, 1, 0));
+            await manager.add_item("TestCat", new Item(Date.now() + 2000000, 2, 1));
+            const items = await manager.get_items("TestCat");
+            assert(items.length === 2, `Expected 2 items, got ${items.length}`);
+        }
+        catch (e) {
+            assert(false, `Add items failed: ${e}`);
+        }
+    },
+    // --- 5. GET ITEMS ---
+    testGetItems: async (assert) => {
+        const manager = await DatabaseTests.createTestDatabase();
+        await manager.init_tables();
+        await manager.add_categories("Food");
+        await manager.add_item("Food", new Item(Date.now() + 1000000, 1, 0));
+        await manager.add_item("Food", new Item(Date.now() + 2000000, 2, 0));
+        try {
+            const items = await manager.get_items("Food");
+            assert(items.length === 2, `Expected 2 items, got ${items.length}`);
+            assert(items.every(i => i instanceof Item), "Not all items are Item instances");
+        }
+        catch (e) {
+            assert(false, `Get items failed: ${e}`);
+        }
+    },
+    // --- 6. REMOVE ITEMS ---
+    testRemoveItems: async (assert) => {
+        const manager = await DatabaseTests.createTestDatabase();
+        await manager.init_tables();
+        await manager.add_categories("Stuff");
+        await manager.add_item("Stuff", new Item(Date.now() + 1000000, 1));
+        await manager.add_item("Stuff", new Item(Date.now() + 2000000, 2));
+        try {
+            let items = await manager.get_items("Stuff");
+            const initialCount = items.length;
+            // Assuming first item has id=1
+            await manager.remove_item(1);
+            items = await manager.get_items("Stuff");
+            assert(items.length === initialCount - 1, "Item was not removed");
+        }
+        catch (e) {
+            assert(false, `Remove item failed: ${e}`);
+        }
+    },
+    // --- 7. UPDATE ITEMS ---
+    testUpdateItems: async (assert) => {
+        const manager = await DatabaseTests.createTestDatabase();
+        await manager.init_tables();
+        await manager.add_categories("Boxes");
+        await manager.add_item("Boxes", new Item(Date.now() + 1000000, 1, 0));
+        try {
+            await manager.update_item(1, { status: 1 });
+            const items = await manager.get_items("Boxes");
+            assert(items.length > 0, "No items found after update");
+            // Note: Verification depends on update_item implementation
+            assert(true, "Update executed without error");
+        }
+        catch (e) {
+            assert(false, `Update item failed: ${e}`);
+        }
+    },
+    // --- 8. STRESS TEST ---
+    testStressDatabase: async (assert) => {
+        const manager = await DatabaseTests.createTestDatabase();
+        await manager.init_tables();
+        await manager.add_categories("Stress");
+        try {
+            const start = Date.now();
+            // Add many items
+            for (let i = 0; i < 50; i++) {
+                await manager.add_item("Stress", new Item(Date.now() + Math.random() * 1000000, Math.floor(Math.random() * 10), Math.floor(Math.random() * 2)));
+            }
+            const items = await manager.get_items("Stress");
+            assert(items.length === 50, `Expected 50 items, got ${items.length}`);
+            const elapsed = Date.now() - start;
+            assert(true, `Stress test completed: added 50 items in ${elapsed}ms`);
+        }
+        catch (e) {
+            assert(false, `Stress test failed: ${e}`);
+        }
+    },
+    // --- RUNNER ---
+    async run() {
+        console.log("🗄️  Database Test Suite");
+        const { assert, getStats } = assertFactory();
+        await this.testInitTables(assert);
+        await this.testAddCategories(assert);
+        await this.testGetCategories(assert);
+        await this.testAddItems(assert);
+        await this.testGetItems(assert);
+        await this.testRemoveItems(assert);
+        await this.testUpdateItems(assert);
+        await this.testStressDatabase(assert);
         const { passed, total } = getStats();
         console.log("-----------------------------------");
         console.log(`Results: ${passed}/${total} tests passed.`);

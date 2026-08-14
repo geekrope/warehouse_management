@@ -1,14 +1,21 @@
+import type { IPersistenceAdapter } from "./persistence.js";
+import {} from "./persistence.js";
+
+type SqlParams = any[] | Record<string, any>;
+
 export interface IDatabaseDriver {
-    query<T>(sql: string, ctor: Constructor<T>, params?: any[]): Promise<T[]>;
-    run(sql: string, params?: any[]): Promise<void>;
+    query<T>(sql: string, ctor: Constructor<T>, params?: SqlParams): Promise<T[]>;
+    run(sql: string, params?: SqlParams): Promise<void>;
 }
 
 export type Constructor<T> = (...args: any[]) => T;
 
 export class SqlJsDriver implements IDatabaseDriver {
-    constructor(private db: any) { }
+    constructor(private db: any, private persistence: IPersistenceAdapter) { 
+        
+    }
 
-    async query<T>(sql: string, ctor: Constructor<T>, params: unknown[] = []): Promise<T[]> {
+    async query<T>(sql: string, ctor: Constructor<T>, params: SqlParams): Promise<T[]> {
         const results = this.db.exec(sql, params);
 
         if (results.length === 0) {
@@ -28,7 +35,13 @@ export class SqlJsDriver implements IDatabaseDriver {
         });
     }
 
-    async run(sql: string, params: unknown[] = []): Promise<void> {
-        this.db.run(sql, params as any[]);
+    async run(sql: string, params: SqlParams): Promise<void> {
+        this.db.run(sql, params);
+        await this.save();
+    }
+
+    public async save(): Promise<void> {
+        const data: Uint8Array = this.db.export();
+        await this.persistence.save(data);
     }
 }

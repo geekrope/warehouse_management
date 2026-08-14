@@ -1,4 +1,5 @@
 import { Item } from './types.js';
+import { DatabaseManager } from './main.js';
 type AssertFunc = (condition: boolean, name: string) => void;
 export declare const debug = true;
 export declare function assertFactory(): {
@@ -21,6 +22,18 @@ export declare const HeapTests: {
     testBruteForceIntegrity(assert: AssertFunc): void;
     testPriorityInvariant: (assert: AssertFunc) => void;
     run(): boolean;
+};
+export declare const DatabaseTests: {
+    createTestDatabase: () => Promise<DatabaseManager>;
+    testInitTables: (assert: AssertFunc) => Promise<void>;
+    testAddCategories: (assert: AssertFunc) => Promise<void>;
+    testGetCategories: (assert: AssertFunc) => Promise<void>;
+    testAddItems: (assert: AssertFunc) => Promise<void>;
+    testGetItems: (assert: AssertFunc) => Promise<void>;
+    testRemoveItems: (assert: AssertFunc) => Promise<void>;
+    testUpdateItems: (assert: AssertFunc) => Promise<void>;
+    testStressDatabase: (assert: AssertFunc) => Promise<void>;
+    run(): Promise<boolean>;
 };
 export {};
 //# sourceMappingURL=tests.d.ts.map
