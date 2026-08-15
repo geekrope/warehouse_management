@@ -20,7 +20,7 @@ export class DatabaseManager {
             status INTEGER NOT NULL,
             add_date INTEGER NOT NULL,
             remove_date INTEGER DEFAULT NULL,
-            FOREIGN KEY (category_id) REFERENCES categories(id));`
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE);`
         );
     }
 
@@ -30,7 +30,7 @@ export class DatabaseManager {
             FROM categories 
             WHERE title = :category;`,
             (obj: any) => obj.id,
-            {":category": category}
+            { ":category": category }
         );
 
         if (category_id.length === 0) {
@@ -41,13 +41,21 @@ export class DatabaseManager {
     }
 
     public async add_categories(...titles: string[]): Promise<void> {
-        const placeholders = titles.map(() => "(?)").join(", ");
+        const valuesClause = titles.map(() => "(?)").join(", ");
 
         await this.db_driver.run(
             `INSERT INTO categories 
             (title) 
-            VALUES ${placeholders};`,
+            VALUES ${valuesClause};`,
             titles
+        );
+    }
+
+    public async remove_category(title: string): Promise<void> {
+        await this.db_driver.run(
+            `DELETE FROM categories
+            WHERE title = :title;`,
+            { ":title": title }
         );
     }
 
@@ -61,11 +69,12 @@ export class DatabaseManager {
     }
 
     public async add_item(category: string, item: Item): Promise<void> {
+        const category_id = await this.get_category_id(category);
         await this.db_driver.run(
             `INSERT INTO items 
             (category_id, box_id, expiration_date, status, add_date) 
-            VALUES ((SELECT id FROM categories WHERE title = ?), ?, ?, ?, ?);`,
-            [category, item.box_id, item.expiration_date, item.status, Date.now()]
+            VALUES (?, ?, ?, ?, ?);`,
+            [category_id, item.box_id, item.expiration_date, item.status, Date.now()]
         );
     }
 
@@ -74,21 +83,27 @@ export class DatabaseManager {
             `UPDATE items
             SET remove_date = :date
             WHERE id = :id;`,
-            {":date": Date.now(), ":id": id}
+            { ":date": Date.now(), ":id": id }
         );
     }
 
     public async update_item(id: number, args: Partial<Item>): Promise<void> {
-        for (const [key, value] of Object.entries(args)) {
-            if(value === undefined || value === null) continue;
-            
-            await this.db_driver.run(
-                `UPDATE items
-                SET ${key} = ?
-                WHERE id = ?;`,
-                [value, id]
-            );
-        }
+        const entries = Object.entries(args).filter(
+            ([_, val]) => val !== undefined
+        );
+
+        if (entries.length === 0) return;
+
+        const keys = entries.map(([key, _]) => key);        
+        const values = entries.map(([_, value]) => value);  
+        const setClause = keys.map(key => `${key} = ?`).join(", ");
+
+        await this.db_driver.run(
+            `UPDATE items
+            SET ${setClause}
+            WHERE id = ?;`,
+            values.concat([id])
+        );
     }
 
     public async get_items(category: string): Promise<Item[]> {
@@ -99,6 +114,6 @@ export class DatabaseManager {
             WHERE C.title = :category
             AND remove_date IS NULL;`,
             Item.from,
-            {":category": category});
+            { ":category": category });
     }
 }

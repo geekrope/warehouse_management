@@ -16,7 +16,7 @@ export class DatabaseManager {
             status INTEGER NOT NULL,
             add_date INTEGER NOT NULL,
             remove_date INTEGER DEFAULT NULL,
-            FOREIGN KEY (category_id) REFERENCES categories(id));`);
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE);`);
     }
     async get_category_id(category) {
         const category_id = await this.db_driver.query(`SELECT id 
@@ -28,10 +28,14 @@ export class DatabaseManager {
         return category_id[0];
     }
     async add_categories(...titles) {
-        const placeholders = titles.map(() => "(?)").join(", ");
+        const valuesClause = titles.map(() => "(?)").join(", ");
         await this.db_driver.run(`INSERT INTO categories 
             (title) 
-            VALUES ${placeholders};`, titles);
+            VALUES ${valuesClause};`, titles);
+    }
+    async remove_category(title) {
+        await this.db_driver.run(`DELETE FROM categories
+            WHERE title = :title;`, { ":title": title });
     }
     async get_categories() {
         return await this.db_driver.query(`SELECT title 
@@ -39,9 +43,10 @@ export class DatabaseManager {
             ORDER BY title ASC;`, (obj) => obj.title);
     }
     async add_item(category, item) {
+        const category_id = await this.get_category_id(category);
         await this.db_driver.run(`INSERT INTO items 
             (category_id, box_id, expiration_date, status, add_date) 
-            VALUES ((SELECT id FROM categories WHERE title = ?), ?, ?, ?, ?);`, [category, item.box_id, item.expiration_date, item.status, Date.now()]);
+            VALUES (?, ?, ?, ?, ?);`, [category_id, item.box_id, item.expiration_date, item.status, Date.now()]);
     }
     async remove_item(id) {
         await this.db_driver.run(`UPDATE items
@@ -49,13 +54,15 @@ export class DatabaseManager {
             WHERE id = :id;`, { ":date": Date.now(), ":id": id });
     }
     async update_item(id, args) {
-        for (const [key, value] of Object.entries(args)) {
-            if (value === undefined || value === null)
-                continue;
-            await this.db_driver.run(`UPDATE items
-                SET ${key} = ?
-                WHERE id = ?;`, [value, id]);
-        }
+        const entries = Object.entries(args).filter(([_, val]) => val !== undefined);
+        if (entries.length === 0)
+            return;
+        const keys = entries.map(([key, _]) => key);
+        const values = entries.map(([_, value]) => value);
+        const setClause = keys.map(key => `${key} = ?`).join(", ");
+        await this.db_driver.run(`UPDATE items
+            SET ${setClause}
+            WHERE id = ?;`, values.concat([id]));
     }
     async get_items(category) {
         return await this.db_driver.query(`SELECT I.*

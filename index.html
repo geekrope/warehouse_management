@@ -12,9 +12,11 @@
 <body>
     <header>
         <div class="header-content">
-            <h1>📦 <span data-locale="page_title_intake"></span></h1>
+            <h1>📦 <span data-locale="version"></span></h1>
             <nav class="nav-tabs">
                 <button class="nav-tab active" data-page="intake" data-locale="page_title_intake"></button>
+                <button class="nav-tab" data-page="storage" data-locale="page_title_storage"></button>
+                <button class="nav-tab" data-page="categories" data-locale="page_title_categories"></button>
                 <button class="nav-tab" data-page="backup" data-locale="page_title_restore"></button>
                 <button class="nav-tab" data-page="stats" data-locale="page_title_stats"></button>
             </nav>
@@ -25,48 +27,24 @@
         <main class="container">
             <!-- ITEM INTAKE PAGE -->
             <div id="intake" class="page active">
-                <div class="card">
+                <div class="card" id="intakeCard">
                     <h2 data-locale="header_main"></h2>
-                    <form id="intakeForm">
-                        <div class="form-group">
-                            <label for="categoryInput" data-locale="category_input"></label>
-                            <input type="text" id="categoryInput" list="categoryDatalist" placeholder="" data-locale-placeholder="item_placeholder" required>
-                            <datalist id="categoryDatalist"></datalist>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="expiryDate" data-locale="label_expiry"></label>
-                            <input type="date" id="expiryDate" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="boxNumber" data-locale="label_box"></label>
-                            <input type="number" id="boxNumber" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="status" data-locale="label_status"></label>
-                            <select id="status" required>
-                                <option value="0" data-locale="status_0"></option>
-                                <option value="1" data-locale="status_1"></option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="btn-primary" data-locale="register_item_btn"></button>
-                    </form>
                 </div>
 
                 <div class="card">
-                    <h2 data-locale="add_category_btn"></h2>
-                    <form id="categoryForm">
-                        <div class="form-group">
-                            <input type="text" data-locale-placeholder="category_input" id="newCategory" required>
-                        </div>
-                        <button type="submit" class="btn-primary" data-locale="add_category_btn"></button>
-                    </form>
+                    <div id="intakeLog" class="log-area">
+                    </div>
+                </div>
+            </div>
+
+            <!-- STORAGE VIEW PAGE -->
+            <div id="storage" class="page">
+                <div class="card" id="storageFilterCard">
+                    <h2 data-locale="header_storage"></h2>
                 </div>
 
                 <div class="card">
+                    <h2> <span id="itemCategory"></span> </h2>
                     <h2> <span id="itemCount"></span> </h2>
                     <div id="itemsList" class="items-list"></div>
                     
@@ -78,8 +56,24 @@
                 </div>
 
                 <div class="card">
-                    <div id="intakeLog" class="log-area">
-                        <div class="log-entry"></div>
+                    <div id="storageLog" class="log-area">
+                    </div>
+                </div>
+            </div>
+
+            <!-- CATEGORIES MANAGEMENT PAGE -->
+            <div id="categories" class="page">
+                <div class="card" id="categoryCard">
+                    <h2 data-locale="header_categories"></h2>
+                </div>
+
+                <div class="card">
+                    <h2 data-locale="categories_list_header"></h2>
+                    <div id="categoriesList" class="items-list" style="min-height: auto;"></div>
+                </div>
+
+                <div class="card">
+                    <div id="categoriesLog" class="log-area">
                     </div>
                 </div>
             </div>
@@ -141,20 +135,22 @@
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 const pageId = tab.getAttribute('data-page');
+                const targetPage = document.getElementById(pageId);
                 
-                // Update active tab
                 document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 
-                // Update active page
                 document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                document.getElementById(pageId).classList.add('active');
+                
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                }
             });
         });
 
-        window.onload = () => {
+        window.onload = async () => {
+            await main();
             localizeDOM();
-            main();
         };
 
         if (debug) {

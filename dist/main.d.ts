@@ -6,6 +6,7 @@ export declare class DatabaseManager {
     init_tables(): Promise<void>;
     get_category_id(category: string): Promise<number>;
     add_categories(...titles: string[]): Promise<void>;
+    remove_category(title: string): Promise<void>;
     get_categories(): Promise<string[]>;
     add_item(category: string, item: Item): Promise<void>;
     remove_item(id: number): Promise<void>;
