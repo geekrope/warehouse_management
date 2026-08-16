@@ -4,7 +4,11 @@ export class SqlJsDriver {
     constructor(db, persistence) {
         this.db = db;
         this.persistence = persistence;
-        db.run(`PRAGMA foreign_keys = ON;`);
+    }
+    async assert_foreign_keys_enabled() {
+        const result = this.db.exec("PRAGMA foreign_keys;");
+        if (result.length === 0 || result[0].values[0][0] !== 1)
+            throw new Error("Foreign key constraints are not enabled in the database.");
     }
     async query(sql, ctor, params) {
         const results = this.db.exec(sql, params);
@@ -12,6 +16,7 @@ export class SqlJsDriver {
             return [];
         }
         const { columns, values } = results[0];
+        this.assert_foreign_keys_enabled();
         return values.map((row) => {
             const obj = {};
             columns.forEach((col, index) => {
@@ -23,6 +28,8 @@ export class SqlJsDriver {
     async run(sql, params) {
         this.db.run(sql, params);
         await this.save();
+        this.db.run("PRAGMA foreign_keys = ON;"); // enable foreign key constraints, as it automatically disables on every update.
+        this.assert_foreign_keys_enabled();
     }
     async save() {
         const data = this.db.export();

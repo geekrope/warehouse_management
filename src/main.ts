@@ -50,14 +50,13 @@ export class DatabaseManager {
         );
     }
 
-    // do not use this method, as it will break the foreign key constraint
-    //public async remove_category(title: string): Promise<void> {
-    //    await this.db_driver.run(
-    //        `DELETE FROM categories
-    //        WHERE title = :title;`,
-    //        { ":title": title }
-    //    );
-    //}
+    public async remove_category(title: string): Promise<void> {
+        await this.db_driver.run(
+            `DELETE FROM categories
+            WHERE title = :title;`,
+            { ":title": title }
+        );
+    }
 
     public async get_categories(): Promise<string[]> {
         return await this.db_driver.query<string>(
@@ -136,6 +135,18 @@ export class DatabaseManager {
             ORDER BY C.title;`,
             (obj: any) => ({ item: Item.from(obj), category: obj.category as string }),
             {":box_id": box_id }
+        );
+    }
+
+    public async get_snapshot(threshold: number): Promise<{category: string, count: number}[]> {
+        return await this.db_driver.query<{category: string, count: number}>(
+            `SELECT C.title as title, COUNT(*) AS count
+            FROM items AS I
+            JOIN categories AS C ON I.category_id = C.id
+            WHERE I.add_date <= :threshold AND (I.remove_date IS NULL OR I.remove_date > :threshold)
+            GROUP BY C.title;`,
+            (obj: any) => ({ category: obj.title as string, count: obj.count as number }),
+            {":threshold": threshold }
         );
     }
 }

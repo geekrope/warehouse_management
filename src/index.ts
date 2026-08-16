@@ -50,12 +50,11 @@ export async function main(): Promise<void> {
 
         const persistence_adapter = new IndexedDbAdapter();
         const db = new SQL.Database((await persistence_adapter.load()) || new Uint8Array());
-        const driver = new SqlJsDriver(db, persistence_adapter);
 
+        const driver = new SqlJsDriver(db, persistence_adapter);        
         db_manager = new DatabaseManager(driver);
 
         await db_manager.init_tables();
-
         categories = await db_manager.get_categories();
 
         init_backup();

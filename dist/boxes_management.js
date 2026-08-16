@@ -30,6 +30,7 @@ export class BoxElement {
         this.container.appendChild(this.items_list_container);
         this.bind_drop_events();
     }
+    // add actual logging   
     bind_drop_events() {
         this.container.addEventListener("dragover", (e) => {
             e.preventDefault();

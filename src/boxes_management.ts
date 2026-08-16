@@ -42,6 +42,7 @@ export class BoxElement {
         this.bind_drop_events();
     }
 
+    // add actual logging   
     private bind_drop_events(): void {
         this.container.addEventListener("dragover", (e: DragEvent) => {
             e.preventDefault();

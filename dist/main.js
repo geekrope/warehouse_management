@@ -34,13 +34,10 @@ export class DatabaseManager {
             VALUES ${values_clause};`, titles);
     }
     // do not use this method, as it will break the foreign key constraint
-    //public async remove_category(title: string): Promise<void> {
-    //    await this.db_driver.run(
-    //        `DELETE FROM categories
-    //        WHERE title = :title;`,
-    //        { ":title": title }
-    //    );
-    //}
+    async remove_category(title) {
+        await this.db_driver.run(`DELETE FROM categories
+            WHERE title = :title;`, { ":title": title });
+    }
     async get_categories() {
         return await this.db_driver.query(`SELECT title 
             FROM categories 
