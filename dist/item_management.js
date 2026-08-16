@@ -1,10 +1,11 @@
 import { Item } from "./types.js";
-import { erase, heapify } from "./heap.js";
+import { heapify, partial_heapsort } from "./heap.js";
 import { add_log_entry, get_element, CategoryInput } from "./dom_utils.js";
 import { get_db_manager, refresh, get_categories_list } from "./index.js";
-import { renderPattern } from "./vocab.js";
+import { renderPattern, repr } from "./vocab.js";
 const page_size = 5;
 let storage_category_input = undefined;
+let heap_ptr = -1;
 let pages = [];
 let items_heap = [];
 let current_category = undefined;
@@ -15,13 +16,11 @@ function get_category_input() {
     return storage_category_input;
 }
 function next_page() {
-    pages.push([]);
-    for (let i = 0; i < page_size; i++) {
-        if (items_heap.length === 0)
-            break;
-        pages[pages.length - 1].push(items_heap[0]);
-        erase(items_heap, 0);
-    }
+    if (heap_ptr == -1)
+        return; // reached the end of the heap
+    const { sorted, ptr } = partial_heapsort(items_heap, heap_ptr, page_size);
+    pages.push(sorted);
+    heap_ptr = ptr;
 }
 function render_item(item) {
     const itemCard = document.createElement("div");
@@ -55,15 +54,9 @@ function render_item(item) {
             await get_db_manager().update_item(item.id, { status: newStatus });
             const newStatusStr = renderPattern(newStatus === 0 ? "status_0" : "status_1");
             add_log_entry(renderPattern("log_update_status", {
-                cat: current_category,
-                meta: item.repr(),
+                meta: repr(item, current_category),
                 status: newStatusStr
             }), "storageLog");
-            add_log_entry(renderPattern("log_update_status", {
-                cat: current_category,
-                meta: item.repr(),
-                status: newStatusStr
-            }), "intakeLog");
             await refresh();
         }
         catch (error) {
@@ -79,13 +72,8 @@ function render_item(item) {
                 throw new Error("Item ID not defined");
             await get_db_manager().remove_item(item.id);
             add_log_entry(renderPattern("log_delete", {
-                cat: current_category,
-                meta: item.repr()
+                meta: repr(item, current_category)
             }), "storageLog");
-            add_log_entry(renderPattern("log_delete", {
-                cat: current_category,
-                meta: item.repr()
-            }), "intakeLog");
             await refresh();
         }
         catch (error) {
@@ -99,7 +87,7 @@ function render_item(item) {
     return itemCard;
 }
 function pages_count() {
-    return Math.ceil((pages.flat().length + items_heap.length) / page_size);
+    return Math.ceil(items_heap.length / page_size);
 }
 function threshold_page() {
     current_page = Math.max(Math.min(current_page, pages_count() - 1), 0);
@@ -127,7 +115,7 @@ export function render_current_page() {
     while (pages.length <= current_page && items_heap.length > 0) {
         next_page();
     }
-    const totalItems = pages.flat().length + items_heap.length;
+    const totalItems = items_heap.length;
     itemCategory.textContent = current_category != undefined ? renderPattern("selected_category", { category: current_category }) : renderPattern("no_category_selected");
     itemCount.textContent = renderPattern("count_label", { count: totalItems });
     pageIndicator.textContent = renderPattern("page_number", { num: `${totalPages === 0 ? 0 : current_page + 1}/${totalPages}` });
@@ -143,11 +131,13 @@ async function load_items() {
     try {
         items_heap = [];
         pages = [];
+        heap_ptr = -1;
         if (current_category === undefined) {
             return;
         }
         const items = await manager.get_items(current_category);
         items_heap = [...items];
+        heap_ptr = items_heap.length - 1;
         heapify(items_heap);
     }
     catch (error) {
@@ -157,7 +147,6 @@ async function load_items() {
 function update_selected_category(new_category) {
     if (get_categories_list().includes(new_category)) {
         current_category = new_category;
-        current_page = 0;
     }
     else {
         current_category = undefined;

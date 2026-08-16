@@ -15,4 +15,10 @@ export declare class IndexedDbAdapter implements IPersistenceAdapter {
     save(data: Uint8Array): Promise<void>;
     load(): Promise<Uint8Array | undefined>;
 }
+export declare class LocalFileAdapter implements IPersistenceAdapter {
+    private filename;
+    constructor(filename?: string);
+    save(data: Uint8Array): Promise<void>;
+    load(): Promise<Uint8Array | undefined>;
+}
 //# sourceMappingURL=persistence.d.ts.map

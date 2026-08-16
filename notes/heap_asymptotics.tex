@@ -1,3 +1,4 @@
+\section{Heap asymptotics}
 We heapify the container by levels starting from the bottom one. Let $n$ be the Heap size. Then $(n - 1) / 2$ is the index of the first node having left child. As we assume that all the substrees starting from the level $i + 1$ are valid min heaps, we have that the tree with the root at index $j$ at the level $i$ may only have the root out of order, which is fixed by sinking it down. The number of executions of the sinking down is given by:
 \[\sum_{i=0}^{h-1} (2^i \cdot (h - i))\]
 where $h$ is the height of the heap, $2^i$ is the number of nodes at the level $i$ and $h - i$ is the number of level below the $i$-th one.

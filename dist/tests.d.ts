@@ -17,7 +17,7 @@ export declare const HeapTests: {
     testInsert(assert: AssertFunc): void;
     testErase(assert: AssertFunc): void;
     testComparator(assert: AssertFunc): void;
-    testHeapsort(assert: AssertFunc): void;
+    testPartialHeapsort(assert: AssertFunc): void;
     testStress(assert: AssertFunc): void;
     testBruteForceIntegrity(assert: AssertFunc): void;
     testPriorityInvariant: (assert: AssertFunc) => void;

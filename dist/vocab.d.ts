@@ -1,5 +1,7 @@
+import { Item } from "./types.js";
 declare const LOCALES: {
     RU_PRISON: {
+        item_repr_full: string;
         page_title_intake: string;
         page_title_storage: string;
         page_title_categories: string;
@@ -41,9 +43,12 @@ declare const LOCALES: {
         log_add_fail: string;
         log_update_status: string;
         log_delete: string;
+        log_import: string;
+        log_export: string;
         version: string;
     };
     EN: {
+        item_repr_full: string;
         page_title_intake: string;
         page_title_storage: string;
         page_title_categories: string;
@@ -85,9 +90,12 @@ declare const LOCALES: {
         log_add_fail: string;
         log_update_status: string;
         log_delete: string;
+        log_import: string;
+        log_export: string;
         version: string;
     };
     RU_SLAVIC: {
+        item_repr_full: string;
         page_title_intake: string;
         page_title_storage: string;
         page_title_categories: string;
@@ -129,9 +137,12 @@ declare const LOCALES: {
         log_add_fail: string;
         log_update_status: string;
         log_delete: string;
+        log_import: string;
+        log_export: string;
         version: string;
     };
     RU_FORMAL: {
+        item_repr_full: string;
         page_title_intake: string;
         page_title_storage: string;
         page_title_categories: string;
@@ -173,6 +184,8 @@ declare const LOCALES: {
         log_add_fail: string;
         log_update_status: string;
         log_delete: string;
+        log_import: string;
+        log_export: string;
         version: string;
     };
 };
@@ -181,5 +194,6 @@ export type Locales = keyof typeof LOCALES;
 export declare function getCurrentLocale(): LocaleType;
 export declare function renderPattern(key: keyof LocaleType, params?: Record<string, any>): string;
 export declare function localizeDOM(): void;
+export declare function repr(item: Item, category?: string | undefined): string;
 export {};
 //# sourceMappingURL=vocab.d.ts.map

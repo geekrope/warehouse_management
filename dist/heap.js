@@ -11,24 +11,27 @@ export function sift_up(container, index) {
         sift_up(container, parent);
     }
 }
-export function sift_down(container, index) {
+export function sift_down(container, index, length = -1) {
+    if (length == -1) {
+        length = container.length;
+    }
     const left = 2 * index + 1;
     const right = 2 * index + 2;
-    if (right < container.length) {
+    if (right < length) {
         const min = container[left].less(container[right]) ? left : right;
         if (container[min].less(container[index])) {
             const temp = container[min];
             container[min] = container[index];
             container[index] = temp;
-            sift_down(container, min);
+            sift_down(container, min, length);
         }
     }
-    else if (left < container.length) {
+    else if (left < length) {
         if (container[left].less(container[index])) {
             const temp = container[left];
             container[left] = container[index];
             container[index] = temp;
-            sift_down(container, left);
+            sift_down(container, left, length);
         }
     }
 }
@@ -52,28 +55,16 @@ export function erase(container, index) {
         sift_down(container, index);
     }
 }
-export function heapsort(container, count = -1) {
-    const copy = Array.from(container).map((item) => {
-        const itemCopy = Item.from(item);
-        return itemCopy;
-    });
-    const sorted = [];
-    let size = copy.length;
-    if (count != -1 && count < copy.length) {
-        size = count;
+export function partial_heapsort(container, ptr, count) {
+    const result = [];
+    for (let i = 0; ptr >= 0 && i < count; i++, ptr--) {
+        const last = container[ptr];
+        container[ptr] = container[0];
+        container[0] = last;
+        result.push(container[ptr]);
+        sift_down(container, 0, ptr);
     }
-    if (size == 0) {
-        return [];
-    }
-    for (let i = 0; i < size - 1; i++) {
-        const last = copy[copy.length - 1];
-        sorted.push(copy[0]);
-        copy.pop();
-        copy[0] = last;
-        sift_down(copy, 0);
-    }
-    sorted.push(copy[0]);
-    return sorted;
+    return { sorted: result, ptr: ptr };
 }
 export function heapify(container) {
     for (let i = (container.length - 1) >> 1; i >= 0; i--) {

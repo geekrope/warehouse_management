@@ -46,4 +46,41 @@ export class IndexedDbAdapter {
         });
     }
 }
+export class LocalFileAdapter {
+    filename;
+    constructor(filename = "database.sqlite") {
+        this.filename = filename;
+    }
+    async save(data) {
+        const blob = new Blob([data], { type: "application/x-sqlite3" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = this.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    async load() {
+        return new Promise((resolve) => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".sqlite,.db,.sql";
+            input.onchange = async () => {
+                const file = input.files?.[0];
+                if (!file) {
+                    resolve(undefined);
+                    return;
+                }
+                const arrayBuffer = await file.arrayBuffer();
+                resolve(new Uint8Array(arrayBuffer));
+            };
+            input.oncancel = () => {
+                resolve(undefined);
+            };
+            input.click();
+        });
+    }
+}
 //# sourceMappingURL=persistence.js.map

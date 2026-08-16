@@ -1,21 +1,20 @@
-\documentclass[12pt,titlepage]{article}
+\documentclass[12pt]{article}
 \usepackage{cmap}
 \usepackage[T2A]{fontenc}
 \usepackage[english]{babel}
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{authblk}
 \usepackage{enumitem}
 \usepackage{csquotes}
 \usepackage{graphicx}
 \usepackage[margin=2cm]{geometry}
 \usepackage{tikz}
 \usepackage[titles]{tocloft}
-\usepackage{hyperref}
 \usepackage{mathrsfs}
 \usepackage{array}
 \usepackage{longtable}
 \usepackage{mathtools}
 \usepackage{twemojis}
+\usepackage{hyperref}
 
 \hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue}
 \usetikzlibrary{math}
@@ -30,7 +29,7 @@
 \newcommand{\im}{\operatorname{im}}
 \newcommand{\tr}{\operatorname{trace}}
 \newcommand{\I}{\operatorname{\mathbb{I}}}
-\renewcommand{\P}{\operatorname{\mathbb{P}}}
+\renewcommand{\P}{\operatorname{\mathbb{P}}} 
 
 \renewcommand{\qedsymbol}{\twemoji{poop}}
 
@@ -45,12 +44,8 @@
 \theoremstyle{plain}
 \newtheorem{lemma}{Lemma}[section]
 
-\begin{titlepage}
-    \title{Techinical details on the implementation}
-    \author{Unknown}
-    \affil{GRABEZH\textsuperscript{\texttrademark}}
-    \date{\today}
-\end{titlepage}
+\title{Techinical details on the implementation}
+\author{}
 
 \begin{document}
 \maketitle
@@ -58,10 +53,16 @@
 \tableofcontents
 \newpage
 
-\section{Heap asymptotics}
-\input{heap_asymptotics.tex}
+\selectlanguage{english}
+\newpage
+\input{cdf_approximation.tex}
 
-\section{Linear regression} \label{sec:linear_regression}
+\newpage
 \input{linear_regression.tex}
 
+\newpage
+\input{box_muller.tex}
+
+\newpage
+\input{heap_asymptotics.tex}
 \end{document}

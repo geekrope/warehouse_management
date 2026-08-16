@@ -1,6 +1,8 @@
+import { Item } from "./types.js";
 const LOCALE_REGEX = /\{(\w+)\}/g;
 const LOCALES = {
     RU_PRISON: {
+        item_repr_full: "БАЛАНДА {cat}, ХАТА {box}, СРОК {date}, СТАТУС {status}",
         page_title_intake: "ПРИЕМ ПЕРВОХОДОВ",
         page_title_storage: "СХРОН",
         page_title_categories: "МАСТИ",
@@ -31,7 +33,7 @@ const LOCALES = {
         status_action_1: "ОБОЗНАЛСЯ",
         status_0: "РОВНЫЙ",
         status_1: "ОПУЩЕНЕЦ",
-        btn_delete: "ЦЕПАНУТЬ",
+        btn_delete: "СЛИТЬ",
         page_title_stats: "РАСКЛАД ПО ОБЩАКУ",
         label_date_filter: "СКОЛЬКО СРОК МОТАЕШЬ",
         log_add_cat: "ЧИРКНУЛИ \"{val}\" В ЖУРНАЛ.",
@@ -40,11 +42,14 @@ const LOCALES = {
         log_delete_cat_fail: "НЕ УДАЛОСЬ УДАЛИТЬ МАСТЬ",
         log_add_item: "БАЛАНДА {cat} ДО {date} ПРОПИСАНА В ХАТЕ {box}",
         log_add_fail: "НЕ ОБЕССУДЬ БАЛАНДА НЕ ЗАЕХАЛА",
-        log_update_status: "УСТАНОВИЛИ {cat} {meta} СТАТУС {status}",
-        log_delete: "ШВАРКНУЛИ {cat} {meta}",
+        log_update_status: "{meta} СТАТУС {status}",
+        log_delete: "ШВАРКНУЛИ {meta}",
+        log_import: "ЗАНЕСЛИ В ОБЩАК",
+        log_export: "ОБЩАК ВЫВЕДЕН В ОФШОР",
         version: "СИСТЕМА ГРАБЕЖ™ v2.0"
     },
     EN: {
+        item_repr_full: "CATEGORY {cat}, BOX {box}, EXPIRY DATE {date}, STATUS {status}",
         page_title_intake: "ITEM INTAKE",
         page_title_storage: "STORAGE",
         page_title_categories: "CATEGORIES",
@@ -84,11 +89,14 @@ const LOCALES = {
         log_delete_cat_fail: "FAILED TO DELETE CATEGORY",
         log_add_item: "ITEM {cat} UNTIL {date} REGISTERED IN BOX {box}",
         log_add_fail: "FAILED TO ADD ITEM",
-        log_update_status: "SET {cat} {meta} STATUS TO {status}",
-        log_delete: "DELETED {cat} {meta}",
+        log_update_status: "SET {meta} STATUS TO {status}",
+        log_delete: "DELETED {meta}",
+        log_import: "ARCHIVE IMPORTED INTO STORAGE",
+        log_export: "ARCHIVE EXPORTED FROM STORAGE",
         version: "Inventory Management System v2.0"
     },
     RU_SLAVIC: {
+        item_repr_full: "УГОЩЕНИЕ {cat}, ПОЛКА {box}, ДО {date}, СТАТУС {status}",
         page_title_intake: "ПРИЕМЪ ЯСТВА ВЪ ПОГРЕБЪ",
         page_title_storage: "ПОГРЕБЪ",
         page_title_categories: "РОДЫ ЯСТВЪ",
@@ -128,11 +136,14 @@ const LOCALES = {
         log_delete_cat_fail: "НЕ УДАЛОСЬ УБРАТИ РОДЪ",
         log_add_item: "{cat} ДО {date} УЛОЖЕНО НА ПОЛКУ {box}",
         log_add_fail: "НЕ УДАЛОСЬ ДОБАВИТИ ОБЪЕКТЪ",
-        log_update_status: "{cat} {meta} ТЕПЕРЬ: {status}",
-        log_delete: "{cat} {meta} УБРАНО",
+        log_update_status: "{meta} ТЕПЕРЬ: {status}",
+        log_delete: "{meta} УБРАНО",
+        log_import: "ЛЕТОПИСЬ ЧИТАЕТСЯ. ДОБРО ВЪ ПОГРЕБЪ",
+        log_export: "ЛЕТОПИСЬ СОСТАВЛЕНА",
         version: "СИСТЕМА СВИТКОВЪ v2.0"
     },
     RU_FORMAL: {
+        item_repr_full: "КАТЕГОРИЯ {cat}, КОРОБКА {box}, ДО {date}, СТАТУС {status}",
         page_title_intake: "ПРИЕМ ТМЦ",
         page_title_storage: "СКЛАД",
         page_title_categories: "КАТЕГОРИИ",
@@ -172,8 +183,10 @@ const LOCALES = {
         log_delete_cat_fail: "НЕ УДАЛОСЬ УДАЛИТЬ КАТЕГОРИЮ",
         log_add_item: "ПРОДУКЦИЯ {cat} (СРОК {date}) РАЗМЕЩЕНА В ЯЧЕЙКЕ {box}",
         log_add_fail: "НЕ УДАЛОСЬ ДОБАВИТЬ ОБЪЕКТ",
-        log_update_status: "ОБЪЕКТУ {cat} {meta} ПРИСВОЕН СТАТУС {status}",
-        log_delete: "ОБЪЕКТ {cat} {meta} УДАЛЕН",
+        log_update_status: "ОБЪЕКТУ {meta} ПРИСВОЕН СТАТУС {status}",
+        log_delete: "ОБЪЕКТ {meta} УДАЛЕН",
+        log_import: "АРХИВ ЗАГРУЖЕН В СИСТЕМУ",
+        log_export: "АРХИВ СОХРАНЕН",
         version: "СИСТЕМА УПРАВЛЕНИЯ ТМЦ v2.0"
     }
 };
@@ -202,6 +215,17 @@ export function localizeDOM() {
     document.querySelectorAll('[data-locale-placeholder]').forEach(el => {
         const key = el.getAttribute('data-locale-placeholder');
         el.placeholder = renderPattern(key);
+    });
+}
+export function repr(item, category = undefined) {
+    if (category === undefined) {
+        category = "UNKNOWN";
+    }
+    return renderPattern("item_repr_full", {
+        cat: category,
+        box: item.box_id,
+        date: new Date(item.expiration_date).toLocaleDateString(),
+        status: renderPattern(item.status === 0 ? "status_0" : "status_1")
     });
 }
 //# sourceMappingURL=vocab.js.map

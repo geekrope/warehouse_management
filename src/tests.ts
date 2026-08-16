@@ -1,4 +1,4 @@
-import { heapify, insert, erase, heapsort } from './heap.js';
+import { heapify, insert, erase, partial_heapsort } from './heap.js';
 import { Item } from './types.js';
 import { DatabaseManager } from './main.js';
 import { SqlJsDriver } from './db_driver.js';
@@ -117,22 +117,37 @@ export const HeapTests = {
         assert(bigBox.less(smallBox), "Bigger box wins tie");
     },
 
-    // --- 5. HEAPSORT ---
-    testHeapsort(assert: AssertFunc) {
+    // --- 5. PARTIAL HEAPSORT ---
+    testPartialHeapsort(assert: AssertFunc) {
         const arr = [];
         for (let i = 0; i < 100; i++) arr.push(this.randomItem());
+        heapify(arr);
 
-        const sorted = heapsort(arr);
+        let ptr = arr.length - 1;
+        const pageSize = 10;
+        const allSorted: Array<Item> = [];
+
+        while (ptr >= 0) {
+            const { sorted, ptr: nextPtr } = partial_heapsort(arr, ptr, pageSize);
+            allSorted.push(...sorted);
+            ptr = nextPtr;
+
+            if (ptr >= 0) {
+                assert(this.isValid(arr.slice(0, ptr + 1)), "Heap property preserved after partial sort page");
+            }
+        }
+
+        assert(allSorted.length === 100, "All items extracted via partial heapsort pages");
 
         let ok = true;
-        for (let i = 1; i < sorted.length; i++) {
-            if (!sorted[i - 1].less(sorted[i])) {
+        for (let i = 1; i < allSorted.length; i++) {
+            if (allSorted[i].less(allSorted[i - 1])) {
                 ok = false;
                 break;
             }
         }
 
-        assert(ok, "Heapsort produces priority-ordered sequence");
+        assert(ok, "Partial heapsort produces priority-ordered sequence");
 
         const arr2 = [
             new Item(5, 1, 0),
@@ -140,10 +155,13 @@ export const HeapTests = {
             new Item(10, 1, 0),
             new Item(2, 1, 1),
         ];
+        heapify(arr2);
 
-        const s2 = heapsort(arr2);
+        const s2 = partial_heapsort(arr2, arr2.length - 1, 2);
 
-        assert(s2[0].status === 2, "Heapsort handles non-heap input (needs heapify)");
+        assert(s2.sorted[0].status === 2, "Partial heapsort extracts highest-priority item first");
+        assert(s2.sorted.length === 2, "Partial heapsort extracts requested batch size");
+        assert(s2.ptr === 1, "Partial heapsort updates ptr correctly");
     },
 
     // --- 6. STRESS ---
@@ -186,16 +204,30 @@ export const HeapTests = {
 
         heapify(rawData);
 
-        // 2. Perform heapsort
-        const sorted = heapsort(rawData);
+        // 2. Perform partial heapsort in chunks until exhausted
+        let ptr = rawData.length - 1;
+        const sorted: Array<Item> = [];
+        const chunkSize = 25;
+
+        while (ptr >= 0) {
+            const res = partial_heapsort(rawData, ptr, chunkSize);
+            sorted.push(...res.sorted);
+            ptr = res.ptr;
+
+            if (ptr >= 0) {
+                if (!this.isValid(rawData.slice(0, ptr + 1))) {
+                    assert(false, "Heap integrity broken between partial heapsort steps");
+                    return;
+                }
+            }
+        }
 
         let isOrderCorrect = true;
-        let isIndexConsistent = true;
 
         for (let i = 0; i < sorted.length; i++) {
             const current = sorted[i];
 
-            // Check A: Priority Order
+            // Check: Priority Order
             // Does the item at i-1 actually have higher or equal priority than item at i?
             if (i > 0 && current.less(sorted[i - 1])) {
                 console.error(`[ORDER ERROR] Item at index ${i} has higher priority than its predecessor`);
@@ -203,8 +235,9 @@ export const HeapTests = {
             }
         }
 
+        assert(sorted.length === size, "All elements extracted during brute force partial sort");
         assert(isOrderCorrect, "Final array is correctly ordered by priority");
-        assert(isIndexConsistent, "Internal 'idx' fields are perfectly synced with array positions");
+        assert(ptr === -1, "Heap pointer reaches -1 when fully exhausted");
     },
 
     testPriorityInvariant: (assert: AssertFunc) => {
@@ -226,7 +259,7 @@ export const HeapTests = {
         this.testInsert(assert);
         this.testErase(assert);
         this.testComparator(assert);
-        //this.testHeapsort(assert); anton hallucinating excuse him        
+        this.testPartialHeapsort(assert);        
         this.testStress(assert);
         this.testPriorityInvariant(assert);
         this.testBruteForceIntegrity(assert);

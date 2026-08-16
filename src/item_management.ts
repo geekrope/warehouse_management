@@ -1,12 +1,13 @@
 import { Item } from "./types.js";
-import { erase, heapify } from "./heap.js";
+import { heapify, partial_heapsort } from "./heap.js";
 import { add_log_entry, get_element, CategoryInput } from "./dom_utils.js";
 import { get_db_manager, refresh, get_categories_list } from "./index.js";
-import { renderPattern } from "./vocab.js";
+import { renderPattern, repr } from "./vocab.js";
 
 const page_size: number = 5;
 
 let storage_category_input: CategoryInput | undefined = undefined;
+let heap_ptr = -1;
 let pages: Item[][] = [];
 let items_heap: Item[] = [];
 let current_category: string | undefined = undefined;
@@ -18,14 +19,11 @@ function get_category_input(): CategoryInput {
 }
 
 function next_page() {
-    pages.push([]);
+    if (heap_ptr == -1) return; // reached the end of the heap
 
-    for (let i = 0; i < page_size; i++) {
-        if (items_heap.length === 0) break;
-
-        pages[pages.length - 1].push(items_heap[0]);
-        erase(items_heap, 0);
-    }
+    const { sorted, ptr } = partial_heapsort(items_heap, heap_ptr, page_size);
+    pages.push(sorted);
+    heap_ptr = ptr;
 }
 
 function render_item(item: Item): HTMLElement {
@@ -67,16 +65,9 @@ function render_item(item: Item): HTMLElement {
             const newStatusStr = renderPattern(newStatus === 0 ? "status_0" : "status_1");
 
             add_log_entry(renderPattern("log_update_status", {
-                cat: current_category,
-                meta: item.repr(),
+                meta: repr(item, current_category),
                 status: newStatusStr
             }), "storageLog");
-
-            add_log_entry(renderPattern("log_update_status", {
-                cat: current_category,
-                meta: item.repr(),
-                status: newStatusStr
-            }), "intakeLog");
 
             await refresh();
         } catch (error) {
@@ -94,14 +85,8 @@ function render_item(item: Item): HTMLElement {
             await get_db_manager().remove_item(item.id);
 
             add_log_entry(renderPattern("log_delete", {
-                cat: current_category,
-                meta: item.repr()
+                meta: repr(item, current_category)
             }), "storageLog");
-
-            add_log_entry(renderPattern("log_delete", {
-                cat: current_category,
-                meta: item.repr()
-            }), "intakeLog");
 
             await refresh();
         } catch (error) {
@@ -119,7 +104,7 @@ function render_item(item: Item): HTMLElement {
 }
 
 function pages_count(): number {
-    return Math.ceil((pages.flat().length + items_heap.length) / page_size);
+    return Math.ceil(items_heap.length / page_size);
 }
 
 function threshold_page(): void {
@@ -155,7 +140,7 @@ export function render_current_page() {
         next_page();
     }
 
-    const totalItems = pages.flat().length + items_heap.length;
+    const totalItems = items_heap.length;
     itemCategory.textContent = current_category != undefined ? renderPattern("selected_category", { category: current_category }) : renderPattern("no_category_selected");
     itemCount.textContent = renderPattern("count_label", { count: totalItems });
     pageIndicator.textContent = renderPattern("page_number", { num: `${totalPages === 0 ? 0 : current_page + 1}/${totalPages}` });
@@ -175,11 +160,13 @@ async function load_items() {
     try {
         items_heap = [];
         pages = [];
+        heap_ptr = -1;
 
         if (current_category === undefined) { return; }
 
         const items = await manager.get_items(current_category);
         items_heap = [...items];
+        heap_ptr = items_heap.length - 1;
         heapify(items_heap);
     } catch (error) {
         console.error("Failed to load items:", error);
@@ -189,7 +176,6 @@ async function load_items() {
 function update_selected_category(new_category: string) {
     if (get_categories_list().includes(new_category)) {
         current_category = new_category;
-        current_page = 0;
     } else {
         current_category = undefined;
     }
