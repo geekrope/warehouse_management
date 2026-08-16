@@ -16,7 +16,7 @@ export class DatabaseManager {
             status INTEGER NOT NULL,
             add_date INTEGER NOT NULL,
             remove_date INTEGER DEFAULT NULL,
-            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE);`);
+            FOREIGN KEY (category_id) REFERENCES categories(id));`);
     }
     async get_category_id(category) {
         const category_id = await this.db_driver.query(`SELECT id 
@@ -28,15 +28,19 @@ export class DatabaseManager {
         return category_id[0];
     }
     async add_categories(...titles) {
-        const valuesClause = titles.map(() => "(?)").join(", ");
+        const values_clause = titles.map(() => "(?)").join(", ");
         await this.db_driver.run(`INSERT INTO categories 
             (title) 
-            VALUES ${valuesClause};`, titles);
+            VALUES ${values_clause};`, titles);
     }
-    async remove_category(title) {
-        await this.db_driver.run(`DELETE FROM categories
-            WHERE title = :title;`, { ":title": title });
-    }
+    // do not use this method, as it will break the foreign key constraint
+    //public async remove_category(title: string): Promise<void> {
+    //    await this.db_driver.run(
+    //        `DELETE FROM categories
+    //        WHERE title = :title;`,
+    //        { ":title": title }
+    //    );
+    //}
     async get_categories() {
         return await this.db_driver.query(`SELECT title 
             FROM categories 
@@ -59,9 +63,9 @@ export class DatabaseManager {
             return;
         const keys = entries.map(([key, _]) => key);
         const values = entries.map(([_, value]) => value);
-        const setClause = keys.map(key => `${key} = ?`).join(", ");
+        const set_clause = keys.map(key => `${key} = ?`).join(", ");
         await this.db_driver.run(`UPDATE items
-            SET ${setClause}
+            SET ${set_clause}
             WHERE id = ?;`, values.concat([id]));
     }
     async get_items(category) {
@@ -70,6 +74,19 @@ export class DatabaseManager {
             LEFT JOIN categories as C ON I.category_id = C.id 
             WHERE C.title = :category
             AND remove_date IS NULL;`, Item.from, { ":category": category });
+    }
+    async get_boxes() {
+        return await this.db_driver.query(`SELECT DISTINCT box_id
+            FROM items
+            WHERE remove_date IS NULL
+            ORDER BY box_id ASC;`, (obj) => obj.box_id);
+    }
+    async get_box_content(box_id) {
+        return await this.db_driver.query(`SELECT I.*, C.title AS category
+            FROM items AS I
+            JOIN categories AS C ON I.category_id = C.id
+            WHERE I.box_id = :box_id AND I.remove_date IS NULL
+            ORDER BY C.title;`, (obj) => ({ item: Item.from(obj), category: obj.category }), { ":box_id": box_id });
     }
 }
 //# sourceMappingURL=main.js.map

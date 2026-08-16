@@ -39,7 +39,7 @@ export const HeapTests = {
         return true;
     },
 
-    randomItem: () => new Item(
+    random_item: () => new Item(
         Math.floor(Math.random() * 1000),
         Math.floor(Math.random() * 50),
         Math.floor(Math.random() * 3)
@@ -89,8 +89,8 @@ export const HeapTests = {
         erase(heap, 0);
         assert(this.isValid(heap), "Erase root keeps heap valid");
 
-        const lastIdx = heap.length - 1;
-        erase(heap, lastIdx);
+        const last_idx = heap.length - 1;
+        erase(heap, last_idx);
         assert(this.isValid(heap), "Erase leaf keeps heap valid");
 
         const h2 = [10, 20, 30, 40, 50].map(v => new Item(v, 0, 0));
@@ -111,37 +111,37 @@ export const HeapTests = {
 
         assert(early.less(late), "Earlier expiration wins");
 
-        const bigBox = new Item(10, 10, 0);
-        const smallBox = new Item(10, 1, 0);
+        const big_box = new Item(10, 10, 0);
+        const small_box = new Item(10, 1, 0);
 
-        assert(bigBox.less(smallBox), "Bigger box wins tie");
+        assert(big_box.less(small_box), "Bigger box wins tie");
     },
 
     // --- 5. PARTIAL HEAPSORT ---
     testPartialHeapsort(assert: AssertFunc) {
         const arr = [];
-        for (let i = 0; i < 100; i++) arr.push(this.randomItem());
+        for (let i = 0; i < 100; i++) arr.push(this.random_item());
         heapify(arr);
 
         let ptr = arr.length - 1;
-        const pageSize = 10;
-        const allSorted: Array<Item> = [];
+        const page_size = 10;
+        const all_sorted: Array<Item> = [];
 
         while (ptr >= 0) {
-            const { sorted, ptr: nextPtr } = partial_heapsort(arr, ptr, pageSize);
-            allSorted.push(...sorted);
-            ptr = nextPtr;
+            const { sorted, ptr: next_ptr } = partial_heapsort(arr, ptr, page_size);
+            all_sorted.push(...sorted);
+            ptr = next_ptr;
 
             if (ptr >= 0) {
                 assert(this.isValid(arr.slice(0, ptr + 1)), "Heap property preserved after partial sort page");
             }
         }
 
-        assert(allSorted.length === 100, "All items extracted via partial heapsort pages");
+        assert(all_sorted.length === 100, "All items extracted via partial heapsort pages");
 
         let ok = true;
-        for (let i = 1; i < allSorted.length; i++) {
-            if (allSorted[i].less(allSorted[i - 1])) {
+        for (let i = 1; i < all_sorted.length; i++) {
+            if (all_sorted[i].less(all_sorted[i - 1])) {
                 ok = false;
                 break;
             }
@@ -170,7 +170,7 @@ export const HeapTests = {
         const start = Date.now();
 
         for (let i = 0; i < 1000; i++) {
-            insert(heap, this.randomItem());
+            insert(heap, this.random_item());
         }
 
         assert(this.isValid(heap), "Heap valid after random inserts");
@@ -191,38 +191,38 @@ export const HeapTests = {
     // --- 7. CONSISTENCY ---
     testBruteForceIntegrity(assert: AssertFunc) {
         const size = 200;
-        const rawData: Array<Item> = [];
+        const raw_data: Array<Item> = [];
 
         // 1. Generate chaotic data
         for (let i = 0; i < size; i++) {
-            rawData.push(new Item(
+            raw_data.push(new Item(
                 Math.floor(Math.random() * 1000), // expiration days
                 Math.floor(Math.random() * 10),   // box number
                 Math.floor(Math.random() * 3)    // status
             ));
         }
 
-        heapify(rawData);
+        heapify(raw_data);
 
         // 2. Perform partial heapsort in chunks until exhausted
-        let ptr = rawData.length - 1;
+        let ptr = raw_data.length - 1;
         const sorted: Array<Item> = [];
-        const chunkSize = 25;
+        const chunk_size = 25;
 
         while (ptr >= 0) {
-            const res = partial_heapsort(rawData, ptr, chunkSize);
+            const res = partial_heapsort(raw_data, ptr, chunk_size);
             sorted.push(...res.sorted);
             ptr = res.ptr;
 
             if (ptr >= 0) {
-                if (!this.isValid(rawData.slice(0, ptr + 1))) {
+                if (!this.isValid(raw_data.slice(0, ptr + 1))) {
                     assert(false, "Heap integrity broken between partial heapsort steps");
                     return;
                 }
             }
         }
 
-        let isOrderCorrect = true;
+        let is_order_correct = true;
 
         for (let i = 0; i < sorted.length; i++) {
             const current = sorted[i];
@@ -231,12 +231,12 @@ export const HeapTests = {
             // Does the item at i-1 actually have higher or equal priority than item at i?
             if (i > 0 && current.less(sorted[i - 1])) {
                 console.error(`[ORDER ERROR] Item at index ${i} has higher priority than its predecessor`);
-                isOrderCorrect = false;
+                is_order_correct = false;
             }
         }
 
         assert(sorted.length === size, "All elements extracted during brute force partial sort");
-        assert(isOrderCorrect, "Final array is correctly ordered by priority");
+        assert(is_order_correct, "Final array is correctly ordered by priority");
         assert(ptr === -1, "Heap pointer reaches -1 when fully exhausted");
     },
 
@@ -373,12 +373,12 @@ export const DatabaseTests = {
         
         try {
             let items = await manager.get_items("Stuff");
-            const initialCount = items.length;
+            const initial_count = items.length;
             
             // Assuming first item has id=1
             await manager.remove_item(1);
             items = await manager.get_items("Stuff");
-            assert(items.length === initialCount - 1, "Item was not removed");
+            assert(items.length === initial_count - 1, "Item was not removed");
         } catch (e) {
             assert(false, `Remove item failed: ${e}`);
         }

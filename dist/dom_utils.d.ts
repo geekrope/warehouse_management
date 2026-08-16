@@ -7,9 +7,9 @@ export declare class CategoryInput {
     on_change: ((value: string) => void) | undefined;
     private _categories;
     constructor(input_name: string, categories?: string[], placeholder?: string, on_change?: (value: string) => void);
-    private onChange;
+    private on_input_change;
     get categories(): string[];
-    set categories(newCategories: string[]);
+    set categories(new_categories: string[]);
     update_datalist(filter_value?: string): void;
     get value(): string;
     set value(val: string);
@@ -44,8 +44,8 @@ export type FormValues = Record<string, string | number | Date | undefined>;
 export declare class DynamicForm {
     form: HTMLFormElement;
     fields: Map<string, FormFieldControl>;
-    submitButton: HTMLButtonElement;
-    constructor(schema: FieldConfig[], submitLabel?: string, onSubmit?: (values: FormValues) => void);
+    submit_button: HTMLButtonElement;
+    constructor(schema: FieldConfig[], submit_label?: string, on_submit?: (values: FormValues) => void);
     private add_field;
     private build_categorical_input;
     private build_select_input;

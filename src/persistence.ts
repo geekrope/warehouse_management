@@ -14,18 +14,18 @@ export class DummyPersistenceAdapter implements IPersistenceAdapter {
 
 export class IndexedDbAdapter implements IPersistenceAdapter {
     constructor(
-        private dbName = "sqlite_db", 
-        private storeName = "sqlite_store", 
+        private db_name = "sqlite_db", 
+        private store_name = "sqlite_store", 
         private key = "db_binary"
     ) {}
 
-    private async getDB(): Promise<IDBDatabase> {
+    private async get_db(): Promise<IDBDatabase> {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, 1);
+            const request = indexedDB.open(this.db_name, 1);
             request.onupgradeneeded = () => {
                 const db = request.result;
-                if (!db.objectStoreNames.contains(this.storeName)) {
-                    db.createObjectStore(this.storeName);
+                if (!db.objectStoreNames.contains(this.store_name)) {
+                    db.createObjectStore(this.store_name);
                 }
             };
             request.onsuccess = () => resolve(request.result);
@@ -34,22 +34,22 @@ export class IndexedDbAdapter implements IPersistenceAdapter {
     }
 
     async save(data: Uint8Array): Promise<void> {
-        const db = await this.getDB();
+        const db = await this.get_db();
         return new Promise((resolve, reject) => {
-            const tx = db.transaction(this.storeName, "readwrite");
-            tx.objectStore(this.storeName).put(data, this.key);
+            const tx = db.transaction(this.store_name, "readwrite");
+            tx.objectStore(this.store_name).put(data, this.key);
             tx.oncomplete = () => resolve();
             tx.onerror = () => reject(tx.error);
         });
     }
 
     async load(): Promise<Uint8Array | undefined> {
-        const db = await this.getDB();
+        const db = await this.get_db();
         return new Promise((resolve, reject) => {
-            const tx = db.transaction(this.storeName, "readonly");
-            const request = tx.objectStore(this.storeName).get(this.key);
+            const tx = db.transaction(this.store_name, "readonly");
+            const request = tx.objectStore(this.store_name).get(this.key);
             
-            request.onsuccess = () => resolve(request.result as Uint8Array || undefined);
+            request.onsuccess = () => resolve((request.result as Uint8Array) || undefined);
             request.onerror = () => reject(request.error);
         });
     }
@@ -82,8 +82,8 @@ export class LocalFileAdapter implements IPersistenceAdapter {
                     resolve(undefined);
                     return;
                 }
-                const arrayBuffer = await file.arrayBuffer();
-                resolve(new Uint8Array(arrayBuffer));
+                const array_buffer = await file.arrayBuffer();
+                resolve(new Uint8Array(array_buffer));
             };
 
             input.oncancel = () => {

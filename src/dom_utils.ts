@@ -30,7 +30,7 @@ export class CategoryInput {
         placeholder: string = "",
         on_change?: (value: string) => void
     ) {
-        const datalistId = `${input_name}-datalist`;
+        const datalist_id = `${input_name}-datalist`;
 
         this.container = document.createElement("div");
 
@@ -39,23 +39,23 @@ export class CategoryInput {
         this.input.id = input_name;
         this.input.name = input_name;
         this.input.placeholder = placeholder;
-        this.input.setAttribute("list", datalistId);
+        this.input.setAttribute("list", datalist_id);
 
         this.datalist = document.createElement("datalist");
-        this.datalist.id = datalistId;
+        this.datalist.id = datalist_id;
 
         this.container.appendChild(this.input);
         this.container.appendChild(this.datalist);
 
         this.on_change = on_change;
 
-        this.input.addEventListener("input", this.onChange.bind(this));
-        this.input.addEventListener("change", this.onChange.bind(this));
+        this.input.addEventListener("input", this.on_input_change.bind(this));
+        this.input.addEventListener("change", this.on_input_change.bind(this));
 
         this.categories = categories;
     }
 
-    private onChange(_event?: Event): void {
+    private on_input_change(_event?: Event): void {
         this.update_datalist(this.input.value);
         if (this.on_change) {
             this.on_change(this.input.value.trim());
@@ -66,8 +66,8 @@ export class CategoryInput {
         return this._categories;
     }
 
-    public set categories(newCategories: string[]) {
-        this._categories = newCategories;
+    public set categories(new_categories: string[]) {
+        this._categories = new_categories;
         this.update_datalist(this.input.value);
     }
 
@@ -137,12 +137,12 @@ export type FormValues = Record<string, string | number | Date | undefined>;
 export class DynamicForm {
     public form: HTMLFormElement;
     public fields: Map<string, FormFieldControl> = new Map();
-    public submitButton: HTMLButtonElement;
+    public submit_button: HTMLButtonElement;
 
     constructor(
         schema: FieldConfig[],
-        submitLabel: string = "Submit",
-        onSubmit?: (values: FormValues) => void
+        submit_label: string = "Submit",
+        on_submit?: (values: FormValues) => void
     ) {
         this.form = document.createElement("form");
 
@@ -150,39 +150,39 @@ export class DynamicForm {
             this.add_field(field);
         }
 
-        this.submitButton = this.build_submit_button(submitLabel);
-        this.form.appendChild(this.submitButton);
+        this.submit_button = this.build_submit_button(submit_label);
+        this.form.appendChild(this.submit_button);
 
-        if (onSubmit) {
+        if (on_submit) {
             this.form.addEventListener("submit", (e) => {
                 e.preventDefault();
-                onSubmit(this.get_values());
+                on_submit(this.get_values());
             });
         }
     }
 
     private add_field(field: FieldConfig): void {
-        const formGroup = document.createElement("div");
-        formGroup.className = "form-group";
+        const form_group = document.createElement("div");
+        form_group.className = "form-group";
 
         const label = document.createElement("label");
         label.textContent = field.label;
         label.htmlFor = field.name;
-        formGroup.appendChild(label);
+        form_group.appendChild(label);
 
         let control: FormFieldControl;
 
         switch (field.type) {
             case "categorical": {
-                const catInput = this.build_categorical_input(field);
-                control = catInput;
-                formGroup.appendChild(catInput.container);
+                const cat_input = this.build_categorical_input(field);
+                control = cat_input;
+                form_group.appendChild(cat_input.container);
                 break;
             }
             case "select": {
                 const select = this.build_select_input(field);
                 control = select;
-                formGroup.appendChild(select);
+                form_group.appendChild(select);
                 break;
             }
             case "text":
@@ -190,24 +190,24 @@ export class DynamicForm {
             case "date": {
                 const input = this.build_standard_input(field);
                 control = input;
-                formGroup.appendChild(input);
+                form_group.appendChild(input);
                 break;
             }
         }
 
         this.fields.set(field.name, control);
-        this.form.appendChild(formGroup);
+        this.form.appendChild(form_group);
     }
 
     private build_categorical_input(field: CategoricalFieldConfig): CategoryInput {
-        const catInput = new CategoryInput(
+        const cat_input = new CategoryInput(
             field.name,
             field.categories ?? [],
             field.placeholder ?? "",
             field.on_change
         );
-        catInput.input.required = field.required ?? true;
-        return catInput;
+        cat_input.input.required = field.required ?? true;
+        return cat_input;
     }
 
     private build_select_input(field: SelectFieldConfig): HTMLSelectElement {
@@ -217,10 +217,10 @@ export class DynamicForm {
         select.required = field.required ?? true;
 
         for (const opt of field.options) {
-            const optionEl = document.createElement("option");
-            optionEl.value = String(opt.value);
-            optionEl.textContent = opt.label;
-            select.appendChild(optionEl);
+            const option_el = document.createElement("option");
+            option_el.value = String(opt.value);
+            option_el.textContent = opt.label;
+            select.appendChild(option_el);
         }
 
         return select;
@@ -245,11 +245,11 @@ export class DynamicForm {
         return input;
     }
 
-    private build_submit_button(submitLabel: string): HTMLButtonElement {
+    private build_submit_button(submit_label: string): HTMLButtonElement {
         const button = document.createElement("button");
         button.type = "submit";
         button.className = "btn-primary";
-        button.textContent = submitLabel;
+        button.textContent = submit_label;
         return button;
     }
 

@@ -39,11 +39,11 @@ export function init_category_management() {
     categoryCard.appendChild(category_form.form);
 }
 export function refresh_category_management(categories) {
-    const listElement = document.getElementById("categoriesList");
-    if (!listElement)
+    const categoriesList = document.getElementById("categoriesList");
+    if (!categoriesList)
         return;
-    listElement.innerHTML = "";
-    const manager = get_db_manager();
+    categoriesList.innerHTML = "";
+    //const manager = get_db_manager();
     for (const cat of categories) {
         const card = document.createElement("div");
         card.className = "item-card";
@@ -53,24 +53,24 @@ export function refresh_category_management(categories) {
         const btnGroup = document.createElement("div");
         btnGroup.className = "button-group";
         btnGroup.style.marginTop = "0";
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "btn-danger";
-        deleteBtn.textContent = renderPattern("btn_delete");
-        deleteBtn.addEventListener("click", async () => {
-            try {
-                await manager.remove_category(cat);
-                add_log_entry(renderPattern("log_delete_cat", { val: cat }), "categoriesLog");
-                await refresh();
-            }
-            catch (error) {
-                console.error("Failed to delete category:", error);
-                add_log_entry(renderPattern("log_delete_cat_fail"), "categoriesLog", true);
-            }
-        });
-        btnGroup.appendChild(deleteBtn);
+        //const deleteBtn = document.createElement("button");
+        //deleteBtn.className = "btn-danger";
+        //deleteBtn.textContent = renderPattern("btn_delete");
+        //deleteBtn.addEventListener("click", async () => {
+        //    try {
+        //        await manager.remove_category(cat);
+        //        add_log_entry(renderPattern("log_delete_cat", { val: cat }), "categoriesLog");
+        //
+        //        await refresh();
+        //    } catch (error) {
+        //        console.error("Failed to delete category:", error);
+        //        add_log_entry(renderPattern("log_delete_cat_fail"), "categoriesLog", true);
+        //    }
+        //});
+        //btnGroup.appendChild(deleteBtn);
         card.appendChild(info);
         card.appendChild(btnGroup);
-        listElement.appendChild(card);
+        categoriesList.appendChild(card);
     }
 }
 //# sourceMappingURL=category_management.js.map

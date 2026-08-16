@@ -3,13 +3,13 @@ import { get_db_manager, refresh, get_categories_list } from "./index.js";
 import { renderPattern } from "./vocab.js";
 import { Item } from "./types.js";
 let intake_form = undefined;
-function log_item_addition(success, category, expiryDate, boxNumber) {
-    if (success && category && expiryDate && boxNumber !== undefined) {
-        const dateStr = expiryDate.toLocaleDateString();
+function log_item_addition(success, category, expiry_date, box_number) {
+    if (success && category && expiry_date && box_number !== undefined) {
+        const date_str = expiry_date.toLocaleDateString();
         add_log_entry(renderPattern("log_add_item", {
             cat: category,
-            date: dateStr,
-            box: boxNumber
+            date: date_str,
+            box: box_number
         }), "intakeLog");
     }
     else {
@@ -78,9 +78,9 @@ export function init_intake() {
     intakeCard.appendChild(intake_form.form);
 }
 export function refresh_intake(categories) {
-    const categoryField = intake_form?.get_field("categoryInput");
-    if (!categoryField)
+    const category_field = intake_form?.get_field("categoryInput");
+    if (!category_field)
         throw new Error("Category field is not initialized");
-    categoryField.categories = categories;
+    category_field.categories = categories;
 }
 //# sourceMappingURL=intake.js.map

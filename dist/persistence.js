@@ -6,21 +6,21 @@ export class DummyPersistenceAdapter {
     }
 }
 export class IndexedDbAdapter {
-    dbName;
-    storeName;
+    db_name;
+    store_name;
     key;
-    constructor(dbName = "sqlite_db", storeName = "sqlite_store", key = "db_binary") {
-        this.dbName = dbName;
-        this.storeName = storeName;
+    constructor(db_name = "sqlite_db", store_name = "sqlite_store", key = "db_binary") {
+        this.db_name = db_name;
+        this.store_name = store_name;
         this.key = key;
     }
-    async getDB() {
+    async get_db() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, 1);
+            const request = indexedDB.open(this.db_name, 1);
             request.onupgradeneeded = () => {
                 const db = request.result;
-                if (!db.objectStoreNames.contains(this.storeName)) {
-                    db.createObjectStore(this.storeName);
+                if (!db.objectStoreNames.contains(this.store_name)) {
+                    db.createObjectStore(this.store_name);
                 }
             };
             request.onsuccess = () => resolve(request.result);
@@ -28,19 +28,19 @@ export class IndexedDbAdapter {
         });
     }
     async save(data) {
-        const db = await this.getDB();
+        const db = await this.get_db();
         return new Promise((resolve, reject) => {
-            const tx = db.transaction(this.storeName, "readwrite");
-            tx.objectStore(this.storeName).put(data, this.key);
+            const tx = db.transaction(this.store_name, "readwrite");
+            tx.objectStore(this.store_name).put(data, this.key);
             tx.oncomplete = () => resolve();
             tx.onerror = () => reject(tx.error);
         });
     }
     async load() {
-        const db = await this.getDB();
+        const db = await this.get_db();
         return new Promise((resolve, reject) => {
-            const tx = db.transaction(this.storeName, "readonly");
-            const request = tx.objectStore(this.storeName).get(this.key);
+            const tx = db.transaction(this.store_name, "readonly");
+            const request = tx.objectStore(this.store_name).get(this.key);
             request.onsuccess = () => resolve(request.result || undefined);
             request.onerror = () => reject(request.error);
         });
@@ -73,8 +73,8 @@ export class LocalFileAdapter {
                     resolve(undefined);
                     return;
                 }
-                const arrayBuffer = await file.arrayBuffer();
-                resolve(new Uint8Array(arrayBuffer));
+                const array_buffer = await file.arrayBuffer();
+                resolve(new Uint8Array(array_buffer));
             };
             input.oncancel = () => {
                 resolve(undefined);

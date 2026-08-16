@@ -11,7 +11,7 @@ export declare function assertFactory(): {
 };
 export declare const HeapTests: {
     isValid: (container: Array<Item>) => boolean;
-    randomItem: () => Item;
+    random_item: () => Item;
     equal: (a: Item, b: Item) => boolean;
     testHeapify(assert: AssertFunc): void;
     testInsert(assert: AssertFunc): void;

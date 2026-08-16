@@ -1,10 +1,10 @@
 import type { IPersistenceAdapter } from "./persistence.js";
-type SqlParams = any[] | Record<string, any>;
+export type SqlParams = any[] | Record<string, any>;
+export type Constructor<T> = (...args: any[]) => T;
 export interface IDatabaseDriver {
     query<T>(sql: string, ctor: Constructor<T>, params?: SqlParams): Promise<T[]>;
     run(sql: string, params?: SqlParams): Promise<void>;
 }
-export type Constructor<T> = (...args: any[]) => T;
 export declare class SqlJsDriver implements IDatabaseDriver {
     private db;
     private persistence;
@@ -13,5 +13,4 @@ export declare class SqlJsDriver implements IDatabaseDriver {
     run(sql: string, params: SqlParams): Promise<void>;
     save(): Promise<void>;
 }
-export {};
 //# sourceMappingURL=db_driver.d.ts.map

@@ -6,6 +6,7 @@ import { IndexedDbAdapter } from "./persistence.js";
 import { init_intake, refresh_intake } from "./intake.js";
 import { init_item_management, refresh_item_management } from "./item_management.js";
 import { init_backup } from "./backup.js";
+import { init_boxes_management, refresh_boxes_management } from "./boxes_management.js";
 import { init_category_management, refresh_category_management } from "./category_management.js";
 let db_manager = undefined;
 let categories = [];
@@ -25,6 +26,7 @@ export async function refresh() {
     await refresh_item_management(categories);
     refresh_category_management(categories);
     refresh_intake(categories);
+    await refresh_boxes_management();
 }
 export async function main() {
     try {
@@ -33,21 +35,23 @@ export async function main() {
         const SQL = await window.initSqlJs({
             locateFile: (filename) => `src/modules/${filename}`
         });
-        const persistenceAdapter = new IndexedDbAdapter();
-        const db = new SQL.Database((await persistenceAdapter.load()) || new Uint8Array());
-        const driver = new SqlJsDriver(db, persistenceAdapter);
+        const persistence_adapter = new IndexedDbAdapter();
+        const db = new SQL.Database((await persistence_adapter.load()) || new Uint8Array());
+        const driver = new SqlJsDriver(db, persistence_adapter);
         db_manager = new DatabaseManager(driver);
         await db_manager.init_tables();
         categories = await db_manager.get_categories();
         init_backup();
         init_intake();
         init_item_management();
+        init_boxes_management();
         init_category_management();
         await refresh();
         add_log_entry(renderPattern("initial_log"), "intakeLog");
         add_log_entry(renderPattern("initial_log"), "storageLog");
         add_log_entry(renderPattern("initial_log"), "categoriesLog");
         add_log_entry(renderPattern("initial_log"), "backupLog");
+        console.log(db.exec("SELECT * FROM Items;"));
     }
     catch (error) {
         console.error("Failed to initialize database:", error);

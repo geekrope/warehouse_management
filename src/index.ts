@@ -6,6 +6,7 @@ import { IndexedDbAdapter } from "./persistence.js";
 import { init_intake, refresh_intake } from "./intake.js";
 import { init_item_management, refresh_item_management } from "./item_management.js";
 import { init_backup } from "./backup.js";
+import { init_boxes_management, refresh_boxes_management } from "./boxes_management.js";
 import { init_category_management, refresh_category_management } from "./category_management.js";
 
 declare global {
@@ -36,6 +37,7 @@ export async function refresh(): Promise<void> {
     await refresh_item_management(categories);
     refresh_category_management(categories);
     refresh_intake(categories);
+    await refresh_boxes_management();
 }
 
 export async function main(): Promise<void> {
@@ -46,9 +48,9 @@ export async function main(): Promise<void> {
             locateFile: (filename: string) => `src/modules/${filename}`
         });
 
-        const persistenceAdapter = new IndexedDbAdapter();
-        const db = new SQL.Database((await persistenceAdapter.load()) || new Uint8Array());
-        const driver = new SqlJsDriver(db, persistenceAdapter);
+        const persistence_adapter = new IndexedDbAdapter();
+        const db = new SQL.Database((await persistence_adapter.load()) || new Uint8Array());
+        const driver = new SqlJsDriver(db, persistence_adapter);
 
         db_manager = new DatabaseManager(driver);
 
@@ -59,6 +61,7 @@ export async function main(): Promise<void> {
         init_backup();
         init_intake();
         init_item_management();
+        init_boxes_management();
         init_category_management();
 
         await refresh();
@@ -67,6 +70,8 @@ export async function main(): Promise<void> {
         add_log_entry(renderPattern("initial_log"), "storageLog");
         add_log_entry(renderPattern("initial_log"), "categoriesLog");
         add_log_entry(renderPattern("initial_log"), "backupLog");
+
+        console.log(db.exec("SELECT * FROM Items;"));
     } catch (error) {
         console.error("Failed to initialize database:", error);
         add_log_entry(renderPattern("initial_log_fail"), "intakeLog", true);

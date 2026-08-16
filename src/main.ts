@@ -10,7 +10,6 @@ export class DatabaseManager {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL UNIQUE);`
         );
-
         await this.db_driver.run(
             `CREATE TABLE IF NOT EXISTS items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,7 +19,7 @@ export class DatabaseManager {
             status INTEGER NOT NULL,
             add_date INTEGER NOT NULL,
             remove_date INTEGER DEFAULT NULL,
-            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE);`
+            FOREIGN KEY (category_id) REFERENCES categories(id));`
         );
     }
 
@@ -41,23 +40,24 @@ export class DatabaseManager {
     }
 
     public async add_categories(...titles: string[]): Promise<void> {
-        const valuesClause = titles.map(() => "(?)").join(", ");
+        const values_clause = titles.map(() => "(?)").join(", ");
 
         await this.db_driver.run(
             `INSERT INTO categories 
             (title) 
-            VALUES ${valuesClause};`,
+            VALUES ${values_clause};`,
             titles
         );
     }
 
-    public async remove_category(title: string): Promise<void> {
-        await this.db_driver.run(
-            `DELETE FROM categories
-            WHERE title = :title;`,
-            { ":title": title }
-        );
-    }
+    // do not use this method, as it will break the foreign key constraint
+    //public async remove_category(title: string): Promise<void> {
+    //    await this.db_driver.run(
+    //        `DELETE FROM categories
+    //        WHERE title = :title;`,
+    //        { ":title": title }
+    //    );
+    //}
 
     public async get_categories(): Promise<string[]> {
         return await this.db_driver.query<string>(
@@ -96,11 +96,11 @@ export class DatabaseManager {
 
         const keys = entries.map(([key, _]) => key);        
         const values = entries.map(([_, value]) => value);  
-        const setClause = keys.map(key => `${key} = ?`).join(", ");
+        const set_clause = keys.map(key => `${key} = ?`).join(", ");
 
         await this.db_driver.run(
             `UPDATE items
-            SET ${setClause}
+            SET ${set_clause}
             WHERE id = ?;`,
             values.concat([id])
         );
@@ -115,5 +115,27 @@ export class DatabaseManager {
             AND remove_date IS NULL;`,
             Item.from,
             { ":category": category });
+    }
+
+    public async get_boxes(): Promise<number[]> {
+        return await this.db_driver.query<number>(
+            `SELECT DISTINCT box_id
+            FROM items
+            WHERE remove_date IS NULL
+            ORDER BY box_id ASC;`,
+            (obj: any) => obj.box_id as number,
+        );
+    }
+
+    public async get_box_content(box_id: number): Promise<{item: Item, category: string}[]> {
+        return await this.db_driver.query<{item: Item, category: string}>(
+            `SELECT I.*, C.title AS category
+            FROM items AS I
+            JOIN categories AS C ON I.category_id = C.id
+            WHERE I.box_id = :box_id AND I.remove_date IS NULL
+            ORDER BY C.title;`,
+            (obj: any) => ({ item: Item.from(obj), category: obj.category as string }),
+            {":box_id": box_id }
+        );
     }
 }

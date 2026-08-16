@@ -5,13 +5,13 @@ import { Item } from "./types.js";
 
 let intake_form: DynamicForm | undefined = undefined;
 
-function log_item_addition(success: boolean, category?: string, expiryDate?: Date, boxNumber?: number) {
-    if (success && category && expiryDate && boxNumber !== undefined) {
-        const dateStr = expiryDate.toLocaleDateString();
+function log_item_addition(success: boolean, category?: string, expiry_date?: Date, box_number?: number) {
+    if (success && category && expiry_date && box_number !== undefined) {
+        const date_str = expiry_date.toLocaleDateString();
         add_log_entry(renderPattern("log_add_item", {
             cat: category,
-            date: dateStr,
-            box: boxNumber
+            date: date_str,
+            box: box_number
         }), "intakeLog");
     } else {
         add_log_entry(renderPattern("log_add_fail"), "intakeLog", true);
@@ -88,8 +88,8 @@ export function init_intake() {
 }
 
 export function refresh_intake(categories: string[]) {
-    const categoryField = intake_form?.get_field<CategoryInput>("categoryInput");
-    if (!categoryField) throw new Error("Category field is not initialized");
+    const category_field = intake_form?.get_field<CategoryInput>("categoryInput");
+    if (!category_field) throw new Error("Category field is not initialized");
     
-    categoryField.categories = categories;
+    category_field.categories = categories;
 }

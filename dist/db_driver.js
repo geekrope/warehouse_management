@@ -1,10 +1,10 @@
-import {} from "./persistence.js";
 export class SqlJsDriver {
     db;
     persistence;
     constructor(db, persistence) {
         this.db = db;
         this.persistence = persistence;
+        db.run(`PRAGMA foreign_keys = ON;`);
     }
     async query(sql, ctor, params) {
         const results = this.db.exec(sql, params);

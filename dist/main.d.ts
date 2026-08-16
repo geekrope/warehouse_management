@@ -6,11 +6,15 @@ export declare class DatabaseManager {
     init_tables(): Promise<void>;
     get_category_id(category: string): Promise<number>;
     add_categories(...titles: string[]): Promise<void>;
-    remove_category(title: string): Promise<void>;
     get_categories(): Promise<string[]>;
     add_item(category: string, item: Item): Promise<void>;
     remove_item(id: number): Promise<void>;
     update_item(id: number, args: Partial<Item>): Promise<void>;
     get_items(category: string): Promise<Item[]>;
+    get_boxes(): Promise<number[]>;
+    get_box_content(box_id: number): Promise<{
+        item: Item;
+        category: string;
+    }[]>;
 }
 //# sourceMappingURL=main.d.ts.map

@@ -7,11 +7,11 @@ export declare class DummyPersistenceAdapter implements IPersistenceAdapter {
     load(): Promise<Uint8Array | undefined>;
 }
 export declare class IndexedDbAdapter implements IPersistenceAdapter {
-    private dbName;
-    private storeName;
+    private db_name;
+    private store_name;
     private key;
-    constructor(dbName?: string, storeName?: string, key?: string);
-    private getDB;
+    constructor(db_name?: string, store_name?: string, key?: string);
+    private get_db;
     save(data: Uint8Array): Promise<void>;
     load(): Promise<Uint8Array | undefined>;
 }

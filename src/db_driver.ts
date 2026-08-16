@@ -1,18 +1,16 @@
 import type { IPersistenceAdapter } from "./persistence.js";
-import {} from "./persistence.js";
 
-type SqlParams = any[] | Record<string, any>;
+export type SqlParams = any[] | Record<string, any>;
+export type Constructor<T> = (...args: any[]) => T;
 
 export interface IDatabaseDriver {
     query<T>(sql: string, ctor: Constructor<T>, params?: SqlParams): Promise<T[]>;
     run(sql: string, params?: SqlParams): Promise<void>;
 }
 
-export type Constructor<T> = (...args: any[]) => T;
-
 export class SqlJsDriver implements IDatabaseDriver {
     constructor(private db: any, private persistence: IPersistenceAdapter) { 
-        
+        db.run(`PRAGMA foreign_keys = ON;`);
     }
 
     async query<T>(sql: string, ctor: Constructor<T>, params: SqlParams): Promise<T[]> {

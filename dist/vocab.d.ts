@@ -5,10 +5,13 @@ declare const LOCALES: {
         page_title_intake: string;
         page_title_storage: string;
         page_title_categories: string;
+        page_title_boxes: string;
         header_main: string;
         header_storage: string;
         header_categories: string;
+        header_boxes: string;
         categories_list_header: string;
+        box_item_count: string;
         category_input: string;
         add_category_btn: string;
         label_expiry: string;
@@ -43,6 +46,8 @@ declare const LOCALES: {
         log_add_fail: string;
         log_update_status: string;
         log_delete: string;
+        log_move: string;
+        log_move_fail: string;
         log_import: string;
         log_export: string;
         version: string;
@@ -52,10 +57,13 @@ declare const LOCALES: {
         page_title_intake: string;
         page_title_storage: string;
         page_title_categories: string;
+        page_title_boxes: string;
         header_main: string;
         header_storage: string;
         header_categories: string;
+        header_boxes: string;
         categories_list_header: string;
+        box_item_count: string;
         category_input: string;
         add_category_btn: string;
         label_expiry: string;
@@ -90,8 +98,10 @@ declare const LOCALES: {
         log_add_fail: string;
         log_update_status: string;
         log_delete: string;
+        log_move: string;
         log_import: string;
         log_export: string;
+        log_move_fail: string;
         version: string;
     };
     RU_SLAVIC: {
@@ -99,10 +109,13 @@ declare const LOCALES: {
         page_title_intake: string;
         page_title_storage: string;
         page_title_categories: string;
+        page_title_boxes: string;
         header_main: string;
         header_storage: string;
         header_categories: string;
+        header_boxes: string;
         categories_list_header: string;
+        box_item_count: string;
         category_input: string;
         add_category_btn: string;
         label_expiry: string;
@@ -137,6 +150,8 @@ declare const LOCALES: {
         log_add_fail: string;
         log_update_status: string;
         log_delete: string;
+        log_move: string;
+        log_move_fail: string;
         log_import: string;
         log_export: string;
         version: string;
@@ -146,10 +161,13 @@ declare const LOCALES: {
         page_title_intake: string;
         page_title_storage: string;
         page_title_categories: string;
+        page_title_boxes: string;
         header_main: string;
         header_storage: string;
         header_categories: string;
+        header_boxes: string;
         categories_list_header: string;
+        box_item_count: string;
         category_input: string;
         add_category_btn: string;
         label_expiry: string;
@@ -184,6 +202,8 @@ declare const LOCALES: {
         log_add_fail: string;
         log_update_status: string;
         log_delete: string;
+        log_move: string;
+        log_move_fail: string;
         log_import: string;
         log_export: string;
         version: string;

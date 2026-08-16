@@ -29,11 +29,11 @@ function render_item(item) {
     itemInfo.className = "item-info";
     const itemDate = document.createElement("div");
     itemDate.className = "item-date";
-    const dateStr = new Date(item.expiration_date).toLocaleDateString();
-    const statusStr = renderPattern(item.status === 0 ? "status_0" : "status_1");
+    const date_str = new Date(item.expiration_date).toLocaleDateString();
+    const status_str = renderPattern(item.status === 0 ? "status_0" : "status_1");
     itemDate.textContent = renderPattern("list_item_label", {
-        date: dateStr,
-        status: statusStr
+        date: date_str,
+        status: status_str
     });
     const itemMeta = document.createElement("div");
     itemMeta.className = "item-meta";
@@ -50,12 +50,12 @@ function render_item(item) {
         try {
             if (item.id == undefined)
                 throw new Error("Item ID not defined");
-            const newStatus = item.status === 0 ? 1 : 0;
-            await get_db_manager().update_item(item.id, { status: newStatus });
-            const newStatusStr = renderPattern(newStatus === 0 ? "status_0" : "status_1");
+            const new_status = item.status === 0 ? 1 : 0;
+            await get_db_manager().update_item(item.id, { status: new_status });
+            const new_status_str = renderPattern(new_status === 0 ? "status_0" : "status_1");
             add_log_entry(renderPattern("log_update_status", {
                 meta: repr(item, current_category),
-                status: newStatusStr
+                status: new_status_str
             }), "storageLog");
             await refresh();
         }
@@ -99,9 +99,9 @@ export function render_current_page() {
     const itemCategory = get_element("itemCategory");
     const prevBtn = get_element("prevPageBtn");
     const nextPageBtn = get_element("nextPageBtn");
-    const totalPages = pages_count();
+    const total_pages = pages_count();
     itemsList.innerHTML = "";
-    if (totalPages === 0) {
+    if (total_pages === 0) {
         const emptyContainer = document.createElement("div");
         emptyContainer.className = "empty-state";
         const emptyImage = document.createElement("img");
@@ -115,14 +115,14 @@ export function render_current_page() {
     while (pages.length <= current_page && items_heap.length > 0) {
         next_page();
     }
-    const totalItems = items_heap.length;
+    const total_items = items_heap.length;
     itemCategory.textContent = current_category != undefined ? renderPattern("selected_category", { category: current_category }) : renderPattern("no_category_selected");
-    itemCount.textContent = renderPattern("count_label", { count: totalItems });
-    pageIndicator.textContent = renderPattern("page_number", { num: `${totalPages === 0 ? 0 : current_page + 1}/${totalPages}` });
+    itemCount.textContent = renderPattern("count_label", { count: total_items });
+    pageIndicator.textContent = renderPattern("page_number", { num: `${total_pages === 0 ? 0 : current_page + 1}/${total_pages}` });
     prevBtn.disabled = current_page === 0;
-    nextPageBtn.disabled = totalPages === 0 || current_page >= totalPages - 1;
-    const currentPageItems = pages[current_page] || [];
-    for (const item of currentPageItems) {
+    nextPageBtn.disabled = total_pages === 0 || current_page >= total_pages - 1;
+    const current_page_items = pages[current_page] || [];
+    for (const item of current_page_items) {
         itemsList.appendChild(render_item(item));
     }
 }
@@ -177,9 +177,9 @@ export function init_item_management() {
     });
 }
 export async function refresh_item_management(categories) {
-    const categoryInput = get_category_input();
-    categoryInput.categories = categories;
-    update_selected_category(categoryInput.value);
+    const category_input = get_category_input();
+    category_input.categories = categories;
+    update_selected_category(category_input.value);
     await load_items();
     render_current_page();
 }

@@ -47,11 +47,11 @@ export function init_category_management() {
 }
 
 export function refresh_category_management(categories: string[]) {
-    const listElement = document.getElementById("categoriesList") as HTMLDivElement | null;
-    if (!listElement) return;
-    listElement.innerHTML = "";
+    const categoriesList = document.getElementById("categoriesList") as HTMLDivElement | null;
+    if (!categoriesList) return;
+    categoriesList.innerHTML = "";
 
-    const manager = get_db_manager();
+    //const manager = get_db_manager();
 
     for (const cat of categories) {
         const card = document.createElement("div");
@@ -65,24 +65,24 @@ export function refresh_category_management(categories: string[]) {
         btnGroup.className = "button-group";
         btnGroup.style.marginTop = "0";
 
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "btn-danger";
-        deleteBtn.textContent = renderPattern("btn_delete");
-        deleteBtn.addEventListener("click", async () => {
-            try {
-                await manager.remove_category(cat);
-                add_log_entry(renderPattern("log_delete_cat", { val: cat }), "categoriesLog");
+        //const deleteBtn = document.createElement("button");
+        //deleteBtn.className = "btn-danger";
+        //deleteBtn.textContent = renderPattern("btn_delete");
+        //deleteBtn.addEventListener("click", async () => {
+        //    try {
+        //        await manager.remove_category(cat);
+        //        add_log_entry(renderPattern("log_delete_cat", { val: cat }), "categoriesLog");
+        //
+        //        await refresh();
+        //    } catch (error) {
+        //        console.error("Failed to delete category:", error);
+        //        add_log_entry(renderPattern("log_delete_cat_fail"), "categoriesLog", true);
+        //    }
+        //});
 
-                await refresh();
-            } catch (error) {
-                console.error("Failed to delete category:", error);
-                add_log_entry(renderPattern("log_delete_cat_fail"), "categoriesLog", true);
-            }
-        });
-
-        btnGroup.appendChild(deleteBtn);
+        //btnGroup.appendChild(deleteBtn);
         card.appendChild(info);
         card.appendChild(btnGroup);
-        listElement.appendChild(card);
+        categoriesList.appendChild(card);
     }
 }
