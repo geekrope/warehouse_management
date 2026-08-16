@@ -20,15 +20,15 @@ export class Item {
         }
         return new Item(item.expiration_date, item.box_id, item.status ?? 0, item.id ?? undefined);
     }
-    less(item) {
-        if (this.status != item.status)
-            return this.status > item.status;
-        if (this.expiration_date != item.expiration_date)
-            return this.expiration_date < item.expiration_date;
-        return this.box_id > item.box_id;
-    }
     repr(include_index = false) {
         return `Best before: ${new Date(this.expiration_date).toLocaleDateString()}, Box: ${this.box_id}, Status: ${this.status} ${include_index ? `, Index: ${this.id}` : ``}`;
     }
+}
+export function item_less(a, b) {
+    if (a.status != b.status)
+        return a.status > b.status;
+    if (a.expiration_date != b.expiration_date)
+        return a.expiration_date < b.expiration_date;
+    return a.box_id > b.box_id;
 }
 //# sourceMappingURL=types.js.map

@@ -1,5 +1,5 @@
 import { heapify, insert, erase, partial_heapsort } from './heap.js';
-import { Item } from './types.js';
+import { Item, item_less } from './types.js';
 import { DatabaseManager } from './main.js';
 import { SqlJsDriver } from './db_driver.js';
 import { DummyPersistenceAdapter } from './persistence.js';
@@ -33,8 +33,8 @@ export const HeapTests = {
         for (let i = 0; i < container.length; i++) {
             const left = 2 * i + 1;
             const right = 2 * i + 2;
-            if (left < container.length && container[left].less(container[i])) return false;
-            if (right < container.length && container[right].less(container[i])) return false;
+            if (left < container.length && item_less(container[left], container[i])) return false;
+            if (right < container.length && item_less(container[right], container[i])) return false;
         }
         return true;
     },
@@ -57,7 +57,7 @@ export const HeapTests = {
             new Item(1, 1, 0),
         ];
 
-        heapify(arr);
+        heapify(arr, item_less);
         assert(this.isValid(arr), "Heapify produces valid heap");
 
         assert(arr[0].status === 1, "Heapify puts highest-priority status on top");
@@ -67,9 +67,9 @@ export const HeapTests = {
     testInsert(assert: AssertFunc) {
         const heap: Array<Item> = [];
 
-        insert(heap, new Item(10, 1, 0));
-        insert(heap, new Item(5, 1, 0));
-        insert(heap, new Item(20, 1, 1));
+        insert(heap, new Item(10, 1, 0), item_less);
+        insert(heap, new Item(5, 1, 0), item_less);
+        insert(heap, new Item(20, 1, 1), item_less);
 
         assert(this.isValid(heap), "Insert maintains heap property");
         assert(heap[0].status === 1, "Insert bubbles high-priority item to top");
@@ -84,18 +84,18 @@ export const HeapTests = {
             new Item(1, 1, 1),
         ];
 
-        heapify(heap);
+        heapify(heap, item_less);
 
-        erase(heap, 0);
+        erase(heap, 0, item_less);
         assert(this.isValid(heap), "Erase root keeps heap valid");
 
         const last_idx = heap.length - 1;
-        erase(heap, last_idx);
+        erase(heap, last_idx, item_less);
         assert(this.isValid(heap), "Erase leaf keeps heap valid");
 
         const h2 = [10, 20, 30, 40, 50].map(v => new Item(v, 0, 0));
         h2[4] = new Item(1, 0, 2);
-        erase(h2, 1);
+        erase(h2, 1, item_less);
         assert(h2[0].status === 2, "Erase correctly triggers sift-up");
     },
 
@@ -104,31 +104,31 @@ export const HeapTests = {
         const ok = new Item(10, 1, 0);
         const damaged = new Item(10, 1, 1);
 
-        assert(damaged.less(ok), "Damaged beats ideal");
+        assert(item_less(damaged, ok), "Damaged beats ideal");
 
         const early = new Item(5, 1, 0);
         const late = new Item(10, 1, 0);
 
-        assert(early.less(late), "Earlier expiration wins");
+        assert(item_less(early, late), "Earlier expiration wins");
 
         const big_box = new Item(10, 10, 0);
         const small_box = new Item(10, 1, 0);
 
-        assert(big_box.less(small_box), "Bigger box wins tie");
+        assert(item_less(big_box, small_box), "Bigger box wins tie");
     },
 
     // --- 5. PARTIAL HEAPSORT ---
     testPartialHeapsort(assert: AssertFunc) {
         const arr = [];
         for (let i = 0; i < 100; i++) arr.push(this.random_item());
-        heapify(arr);
+        heapify(arr, item_less);
 
         let ptr = arr.length - 1;
         const page_size = 10;
         const all_sorted: Array<Item> = [];
 
         while (ptr >= 0) {
-            const { sorted, ptr: next_ptr } = partial_heapsort(arr, ptr, page_size);
+            const { sorted, ptr: next_ptr } = partial_heapsort(arr, ptr, page_size, item_less);
             all_sorted.push(...sorted);
             ptr = next_ptr;
 
@@ -141,7 +141,7 @@ export const HeapTests = {
 
         let ok = true;
         for (let i = 1; i < all_sorted.length; i++) {
-            if (all_sorted[i].less(all_sorted[i - 1])) {
+            if (item_less(all_sorted[i], all_sorted[i - 1])) {
                 ok = false;
                 break;
             }
@@ -155,9 +155,9 @@ export const HeapTests = {
             new Item(10, 1, 0),
             new Item(2, 1, 1),
         ];
-        heapify(arr2);
+        heapify(arr2, item_less);
 
-        const s2 = partial_heapsort(arr2, arr2.length - 1, 2);
+        const s2 = partial_heapsort(arr2, arr2.length - 1, 2, item_less);
 
         assert(s2.sorted[0].status === 2, "Partial heapsort extracts highest-priority item first");
         assert(s2.sorted.length === 2, "Partial heapsort extracts requested batch size");
@@ -170,14 +170,14 @@ export const HeapTests = {
         const start = Date.now();
 
         for (let i = 0; i < 1000; i++) {
-            insert(heap, this.random_item());
+            insert(heap, this.random_item(), item_less);
         }
 
         assert(this.isValid(heap), "Heap valid after random inserts");
 
         for (let i = 0; i < 200; i++) {
             const idx = Math.floor(Math.random() * heap.length);
-            erase(heap, idx);
+            erase(heap, idx, item_less);
 
             if (!this.isValid(heap)) {
                 assert(false, "Heap broke during random erase");
@@ -202,7 +202,7 @@ export const HeapTests = {
             ));
         }
 
-        heapify(raw_data);
+        heapify(raw_data, item_less);
 
         // 2. Perform partial heapsort in chunks until exhausted
         let ptr = raw_data.length - 1;
@@ -210,7 +210,7 @@ export const HeapTests = {
         const chunk_size = 25;
 
         while (ptr >= 0) {
-            const res = partial_heapsort(raw_data, ptr, chunk_size);
+            const res = partial_heapsort(raw_data, ptr, chunk_size, item_less);
             sorted.push(...res.sorted);
             ptr = res.ptr;
 
@@ -229,7 +229,7 @@ export const HeapTests = {
 
             // Check: Priority Order
             // Does the item at i-1 actually have higher or equal priority than item at i?
-            if (i > 0 && current.less(sorted[i - 1])) {
+            if (i > 0 && item_less(current, sorted[i - 1])) {
                 console.error(`[ORDER ERROR] Item at index ${i} has higher priority than its predecessor`);
                 is_order_correct = false;
             }
@@ -243,8 +243,8 @@ export const HeapTests = {
     testPriorityInvariant: (assert: AssertFunc) => {
         const heap: Array<Item> = [];
 
-        insert(heap, new Item(100, 1, 1));
-        insert(heap, new Item(999, 1, 2));
+        insert(heap, new Item(100, 1, 1), item_less);
+        insert(heap, new Item(999, 1, 2), item_less);
 
         assert(heap[0].status === 2, "Critical always outranks damaged regardless of date");
     },
@@ -337,8 +337,8 @@ export const DatabaseTests = {
         await manager.add_categories("TestCat");
         
         try {
-            await manager.add_item("TestCat", new Item(Date.now() + 1000000, 1, 0));
-            await manager.add_item("TestCat", new Item(Date.now() + 2000000, 2, 1));
+            await manager.add_items("TestCat", new Item(Date.now() + 1000000, 1, 0));
+            await manager.add_items("TestCat", new Item(Date.now() + 2000000, 2, 1));
             const items = await manager.get_items("TestCat");
             assert(items.length === 2, `Expected 2 items, got ${items.length}`);
         } catch (e) {
@@ -351,8 +351,8 @@ export const DatabaseTests = {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
         await manager.add_categories("Food");
-        await manager.add_item("Food", new Item(Date.now() + 1000000, 1, 0));
-        await manager.add_item("Food", new Item(Date.now() + 2000000, 2, 0));
+        await manager.add_items("Food", new Item(Date.now() + 1000000, 1, 0));
+        await manager.add_items("Food", new Item(Date.now() + 2000000, 2, 0));
         
         try {
             const items = await manager.get_items("Food");
@@ -368,8 +368,8 @@ export const DatabaseTests = {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
         await manager.add_categories("Stuff");
-        await manager.add_item("Stuff", new Item(Date.now() + 1000000, 1));
-        await manager.add_item("Stuff", new Item(Date.now() + 2000000, 2));
+        await manager.add_items("Stuff", new Item(Date.now() + 1000000, 1));
+        await manager.add_items("Stuff", new Item(Date.now() + 2000000, 2));
         
         try {
             let items = await manager.get_items("Stuff");
@@ -389,7 +389,7 @@ export const DatabaseTests = {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
         await manager.add_categories("Boxes");
-        await manager.add_item("Boxes", new Item(Date.now() + 1000000, 1, 0));
+        await manager.add_items("Boxes", new Item(Date.now() + 1000000, 1, 0));
         
         try {
             await manager.update_item(1, { status: 1 });
@@ -413,7 +413,7 @@ export const DatabaseTests = {
             
             // Add many items
             for (let i = 0; i < 50; i++) {
-                await manager.add_item("Stress", new Item(
+                await manager.add_items("Stress", new Item(
                     Date.now() + Math.random() * 1000000,
                     Math.floor(Math.random() * 10),
                     Math.floor(Math.random() * 2)

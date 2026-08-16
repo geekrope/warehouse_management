@@ -1,4 +1,4 @@
-import { Item } from "./types.js";
+import { Item, item_less } from "./types.js";
 import { heapify, partial_heapsort } from "./heap.js";
 import { add_log_entry, get_element, CategoryInput } from "./dom_utils.js";
 import { get_db_manager, refresh, get_categories_list } from "./index.js";
@@ -18,7 +18,7 @@ function get_category_input() {
 function next_page() {
     if (heap_ptr == -1)
         return; // reached the end of the heap
-    const { sorted, ptr } = partial_heapsort(items_heap, heap_ptr, page_size);
+    const { sorted, ptr } = partial_heapsort(items_heap, heap_ptr, page_size, item_less);
     pages.push(sorted);
     heap_ptr = ptr;
 }
@@ -138,7 +138,7 @@ async function load_items() {
         const items = await manager.get_items(current_category);
         items_heap = [...items];
         heap_ptr = items_heap.length - 1;
-        heapify(items_heap);
+        heapify(items_heap, item_less);
     }
     catch (error) {
         console.error("Failed to load items:", error);

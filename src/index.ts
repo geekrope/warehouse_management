@@ -29,6 +29,7 @@ export function get_categories_list(): string[] {
     return categories;
 }
 
+// reinitialize each page when focus is regained
 export async function refresh(): Promise<void> {
     if (!db_manager) return;
 
@@ -54,6 +55,7 @@ export async function main(): Promise<void> {
         const driver = new SqlJsDriver(db, persistence_adapter);        
         db_manager = new DatabaseManager(driver);
 
+        await driver.enable_foreign_keys();
         await db_manager.init_tables();
         categories = await db_manager.get_categories();
 

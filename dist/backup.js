@@ -4,15 +4,17 @@ import { renderPattern } from "./vocab.js";
 async function transfer(from, to) {
     const data = await from.load();
     if (data === undefined)
-        return;
+        return false;
     await to.save(data);
+    return true;
 }
 async function import_backup() {
     const adapter = new LocalFileAdapter("database_backup.sqlite");
     const indexed_db_adapter = new IndexedDbAdapter();
-    await transfer(adapter, indexed_db_adapter);
-    add_log_entry(renderPattern("log_import"), "backupLog");
-    setTimeout(() => window.location.reload(), 1000);
+    if (await transfer(adapter, indexed_db_adapter)) {
+        add_log_entry(renderPattern("log_import"), "backupLog");
+        setTimeout(() => window.location.reload(), 1000);
+    }
 }
 async function export_backup() {
     const adapter = new LocalFileAdapter("database_backup.sqlite");

@@ -8,7 +8,7 @@ export declare class DatabaseManager {
     add_categories(...titles: string[]): Promise<void>;
     remove_category(title: string): Promise<void>;
     get_categories(): Promise<string[]>;
-    add_item(category: string, item: Item): Promise<void>;
+    add_items(category: string, ...item: Item[]): Promise<void>;
     remove_item(id: number): Promise<void>;
     update_item(id: number, args: Partial<Item>): Promise<void>;
     get_items(category: string): Promise<Item[]>;
@@ -16,6 +16,10 @@ export declare class DatabaseManager {
     get_box_content(box_id: number): Promise<{
         item: Item;
         category: string;
+    }[]>;
+    get_snapshot(threshold: number): Promise<{
+        category: string;
+        count: number;
     }[]>;
 }
 //# sourceMappingURL=main.d.ts.map

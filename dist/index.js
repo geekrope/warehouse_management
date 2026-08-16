@@ -39,6 +39,7 @@ export async function main() {
         const db = new SQL.Database((await persistence_adapter.load()) || new Uint8Array());
         const driver = new SqlJsDriver(db, persistence_adapter);
         db_manager = new DatabaseManager(driver);
+        await driver.enable_foreign_keys();
         await db_manager.init_tables();
         categories = await db_manager.get_categories();
         init_backup();

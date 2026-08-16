@@ -4,6 +4,7 @@ import { Item } from "./types.js";
 export class DatabaseManager {
     constructor(private db_driver: IDatabaseDriver) { }
 
+    //TODO: add category metadata  
     public async init_tables(): Promise<void> {
         await this.db_driver.run(
             `CREATE TABLE IF NOT EXISTS categories (
@@ -67,13 +68,15 @@ export class DatabaseManager {
         );
     }
 
-    public async add_item(category: string, item: Item): Promise<void> {
+    public async add_items(category: string, ...item: Item[]): Promise<void> {
         const category_id = await this.get_category_id(category);
+        const flattened_values = item.flatMap(i => [category_id, i.box_id, i.expiration_date, i.status, Date.now()]);
+        const clause = item.map(() => "(?, ?, ?, ?, ?)").join(", ");
         await this.db_driver.run(
             `INSERT INTO items 
             (category_id, box_id, expiration_date, status, add_date) 
-            VALUES (?, ?, ?, ?, ?);`,
-            [category_id, item.box_id, item.expiration_date, item.status, Date.now()]
+            VALUES ${clause};`,
+            flattened_values
         );
     }
 

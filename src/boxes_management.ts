@@ -3,6 +3,8 @@ import { get_db_manager, refresh } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { Item } from "./types.js";
 
+//TODO: review and refactor this file, it's a mess. add logging
+
 export class BoxElement {
     public container: HTMLDivElement;
     private items_list_container: HTMLDivElement;
@@ -20,7 +22,7 @@ export class BoxElement {
 
         const title = document.createElement("span");
         title.className = "box-title";
-        title.textContent = `${renderPattern("box")} ${box_id}`;
+        title.textContent = `📦 ${renderPattern("box")} ${box_id}`;
 
         const badge = document.createElement("span");
         badge.className = "count-badge";

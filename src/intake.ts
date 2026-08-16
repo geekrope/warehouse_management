@@ -36,7 +36,7 @@ async function add_item() {
         }
         if (!categories.includes(category)) throw new Error("Category does not exist");
 
-        await manager.add_item(category, new Item(expiry_date.getTime(), box_number, status));        
+        await manager.add_items(category, new Item(expiry_date.getTime(), box_number, status));        
         log_item_addition(true, category, expiry_date, box_number);
         await refresh();
     } catch (error) {

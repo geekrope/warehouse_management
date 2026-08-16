@@ -14,12 +14,12 @@
         <div class="header-content">
             <h1>📦 <span data-locale="version"></span></h1>
             <nav class="nav-tabs">
-                <button class="nav-tab active" data-page="intake" data-locale="page_title_intake"></button>
-                <button class="nav-tab" data-page="storage" data-locale="page_title_storage"></button>
-                <button class="nav-tab" data-page="categories" data-locale="page_title_categories"></button>
-                <button class="nav-tab" data-page="boxes" data-locale="page_title_boxes"></button>
-                <button class="nav-tab" data-page="backup" data-locale="page_title_restore"></button>
-                <button class="nav-tab" data-page="stats" data-locale="page_title_stats"></button>
+                <button class="nav-tab active" data-page="intake">📥 <span data-locale="page_title_intake"></span></button>
+                <button class="nav-tab" data-page="storage">🏬 <span data-locale="page_title_storage"></span></button>
+                <button class="nav-tab" data-page="categories">🏷️ <span data-locale="page_title_categories"></span></button>
+                <button class="nav-tab" data-page="boxes">🗃️ <span data-locale="page_title_boxes"></span></button>
+                <button class="nav-tab" data-page="backup">💾 <span data-locale="page_title_restore"></span></button>
+                <button class="nav-tab" data-page="stats">📊 <span data-locale="page_title_stats"></span></button>
             </nav>
         </div>
     </header>
@@ -29,7 +29,7 @@
             <!-- ITEM INTAKE PAGE -->
             <div id="intake" class="page active">
                 <div class="card" id="intakeCard">
-                    <h2 data-locale="header_main"></h2>
+                    <h2>📥 <span data-locale="header_main"></span></h2>
                 </div>
 
                 <div class="card">
@@ -41,12 +41,12 @@
             <!-- STORAGE VIEW PAGE -->
             <div id="storage" class="page">
                 <div class="card" id="storageFilterCard">
-                    <h2 data-locale="header_storage"></h2>
+                    <h2>🏬 <span data-locale="header_storage"></span></h2>
                 </div>
 
                 <div class="card">
-                    <h2> <span id="itemCategory"></span> </h2>
-                    <h2> <span id="itemCount"></span> </h2>
+                    <h2>🏷️ <span id="itemCategory"></span> </h2>
+                    <h2>🔢 <span id="itemCount"></span> </h2>
                     <div id="itemsList" class="items-list"></div>
                     
                     <div class="pagination-controls" id="paginationControls">
@@ -65,11 +65,11 @@
             <!-- CATEGORIES MANAGEMENT PAGE -->
             <div id="categories" class="page">
                 <div class="card" id="categoryCard">
-                    <h2 data-locale="header_categories"></h2>
+                    <h2>✨ <span data-locale="header_categories"></span></h2>
                 </div>
 
                 <div class="card">
-                    <h2 data-locale="categories_list_header"></h2>
+                    <h2>📋 <span data-locale="categories_list_header"></span></h2>
                     <div id="categoriesList" class="items-list" style="min-height: auto;"></div>
                 </div>
 
@@ -82,7 +82,7 @@
             <!-- BOXES MANAGEMENT PAGE -->
             <div id="boxes" class="page">
                 <div class="card" id="boxesCard">
-                    <h2 data-locale="header_boxes"></h2>
+                    <h2>🗃️ <span data-locale="header_boxes"></span></h2>
                     <div id="boxesContainer" class="boxes-container"></div>
                 </div>
 
@@ -94,7 +94,7 @@
             <!-- BACKUP & RESTORE PAGE -->
             <div id="backup" class="page">
                 <div class="card">
-                    <h2 data-locale="header_restore">Data Management</h2>
+                    <h2>💾 <span data-locale="header_restore"></span></h2>
                     <p style="color: #7f8c8d; margin-bottom: 20px;"></p>
                     
                     <div class="button-group">
@@ -114,7 +114,7 @@
             <!-- STATISTICS PAGE -->
             <div id="stats" class="page">
                 <div class="card">
-                    <h2 data-locale="page_title_stats"></h2>
+                    <h2>📊 <span data-locale="page_title_stats"></span></h2>
                     <p style="color: #7f8c8d; margin-bottom: 20px;">Coming soon: Linear regression analysis and inventory trends</p>
                     
                     <div class="form-group">

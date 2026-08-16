@@ -4,6 +4,7 @@ export class DatabaseManager {
     constructor(db_driver) {
         this.db_driver = db_driver;
     }
+    //TODO: add category metadata  
     async init_tables() {
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +34,6 @@ export class DatabaseManager {
             (title) 
             VALUES ${values_clause};`, titles);
     }
-    // do not use this method, as it will break the foreign key constraint
     async remove_category(title) {
         await this.db_driver.run(`DELETE FROM categories
             WHERE title = :title;`, { ":title": title });
@@ -43,11 +43,13 @@ export class DatabaseManager {
             FROM categories 
             ORDER BY title ASC;`, (obj) => obj.title);
     }
-    async add_item(category, item) {
+    async add_items(category, ...item) {
         const category_id = await this.get_category_id(category);
+        const flattened_values = item.flatMap(i => [category_id, i.box_id, i.expiration_date, i.status, Date.now()]);
+        const clause = item.map(() => "(?, ?, ?, ?, ?)").join(", ");
         await this.db_driver.run(`INSERT INTO items 
             (category_id, box_id, expiration_date, status, add_date) 
-            VALUES (?, ?, ?, ?, ?);`, [category_id, item.box_id, item.expiration_date, item.status, Date.now()]);
+            VALUES ${clause};`, flattened_values);
     }
     async remove_item(id) {
         await this.db_driver.run(`UPDATE items
@@ -84,6 +86,13 @@ export class DatabaseManager {
             JOIN categories AS C ON I.category_id = C.id
             WHERE I.box_id = :box_id AND I.remove_date IS NULL
             ORDER BY C.title;`, (obj) => ({ item: Item.from(obj), category: obj.category }), { ":box_id": box_id });
+    }
+    async get_snapshot(threshold) {
+        return await this.db_driver.query(`SELECT C.title as title, COUNT(*) AS count
+            FROM items AS I
+            JOIN categories AS C ON I.category_id = C.id
+            WHERE I.add_date <= :threshold AND (I.remove_date IS NULL OR I.remove_date > :threshold)
+            GROUP BY C.title;`, (obj) => ({ category: obj.title, count: obj.count }), { ":threshold": threshold });
     }
 }
 //# sourceMappingURL=main.js.map

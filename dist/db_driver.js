@@ -5,6 +5,9 @@ export class SqlJsDriver {
         this.db = db;
         this.persistence = persistence;
     }
+    async enable_foreign_keys() {
+        await this.db.run("PRAGMA foreign_keys = ON;");
+    }
     async assert_foreign_keys_enabled() {
         const result = this.db.exec("PRAGMA foreign_keys;");
         if (result.length === 0 || result[0].values[0][0] !== 1)
@@ -16,7 +19,7 @@ export class SqlJsDriver {
             return [];
         }
         const { columns, values } = results[0];
-        this.assert_foreign_keys_enabled();
+        await this.assert_foreign_keys_enabled();
         return values.map((row) => {
             const obj = {};
             columns.forEach((col, index) => {
@@ -28,8 +31,8 @@ export class SqlJsDriver {
     async run(sql, params) {
         this.db.run(sql, params);
         await this.save();
-        this.db.run("PRAGMA foreign_keys = ON;"); // enable foreign key constraints, as it automatically disables on every update.
-        this.assert_foreign_keys_enabled();
+        await this.enable_foreign_keys(); // enable foreign key constraints, as it automatically disables on every update.
+        await this.assert_foreign_keys_enabled();
     }
     async save() {
         const data = this.db.export();
