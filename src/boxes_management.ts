@@ -1,9 +1,7 @@
-import { add_log_entry } from "./dom_utils.js";
+import { add_log_entry, empty_container } from "./dom_utils.js";
 import { get_db_manager, refresh } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { Item } from "./types.js";
-
-//TODO: review and refactor this file, it's a mess. add logging
 
 export class BoxElement {
     public container: HTMLDivElement;
@@ -11,18 +9,18 @@ export class BoxElement {
 
     constructor(
         public box_id: number,
+        public box_weight: number,
         item_elements: HTMLElement[] = []
     ) {
         this.container = document.createElement("div");
         this.container.className = "box-card";
-        this.container.dataset["boxId"] = String(box_id);
 
         const header = document.createElement("div");
         header.className = "box-header";
 
         const title = document.createElement("span");
         title.className = "box-title";
-        title.textContent = `📦 ${renderPattern("box")} ${box_id}`;
+        title.textContent = `📦 ${renderPattern("box")} ${box_id}, ${renderPattern("weight", { "weight": box_weight })}`;
 
         const badge = document.createElement("span");
         badge.className = "count-badge";
@@ -33,6 +31,8 @@ export class BoxElement {
 
         this.items_list_container = document.createElement("div");
         this.items_list_container.className = "box-items-list";
+        this.items_list_container.style.overflowY = "auto";
+        this.items_list_container.style.maxHeight = "300px";
 
         for (const el of item_elements) {
             this.items_list_container.appendChild(el);
@@ -44,7 +44,6 @@ export class BoxElement {
         this.bind_drop_events();
     }
 
-    // add actual logging   
     private bind_drop_events(): void {
         this.container.addEventListener("dragover", (e: DragEvent) => {
             e.preventDefault();
@@ -62,19 +61,32 @@ export class BoxElement {
             e.preventDefault();
             this.container.classList.remove("drag-over");
 
-            const raw_item_id = e.dataTransfer?.getData("text/plain");
-            if (!raw_item_id) return;
+            if (!e.dataTransfer) return;
 
-            const item_id = Number(raw_item_id);
-            if (isNaN(item_id)) return;
+            let item: Item;
+
+            try {
+                const raw_content = JSON.parse(e.dataTransfer?.getData("text/plain"));
+
+                item = Item.from(raw_content);
+                if (item.id === undefined) return;
+            }
+            catch (err) {
+                if (err instanceof SyntaxError || err instanceof TypeError) {
+                    return;
+                }
+                else {
+                    throw err;
+                }
+            }
 
             try {
                 const manager = get_db_manager();
-                await manager.update_item(item_id, { box_id: this.box_id });
+                await manager.update_item(item.id, { box_id: this.box_id });
 
                 add_log_entry(
                     renderPattern("log_move", {
-                        meta: repr(new Item(0, this.box_id), undefined),
+                        meta: repr(item),
                         box: this.box_id
                     }),
                     "boxesLog"
@@ -83,23 +95,23 @@ export class BoxElement {
                 await refresh();
             } catch (err) {
                 console.error("Failed to move item to box:", err);
-                add_log_entry(renderPattern("log_move_fail", {
-                    meta: repr(new Item(0, this.box_id), undefined),
-                    box: this.box_id
-                }), "boxesLog", true);
+                add_log_entry(
+                    renderPattern("log_move_fail", {
+                        meta: repr(item),
+                        box: this.box_id
+                    }),
+                    "boxesLog",
+                    true
+                );
             }
         });
     }
 }
 
-export function create_draggable_item_element(item: Item, category: string): HTMLElement {
+export function create_draggable_item_element(item: Item): HTMLElement {
     const card = document.createElement("div");
     card.className = "item-card draggable-item-card";
     card.draggable = true;
-
-    if (item.id !== undefined) {
-        card.dataset["itemId"] = String(item.id);
-    }
 
     const info = document.createElement("div");
     info.className = "item-info";
@@ -115,16 +127,15 @@ export function create_draggable_item_element(item: Item, category: string): HTM
 
     const meta = document.createElement("div");
     meta.className = "item-meta";
-    meta.textContent = category;
+    meta.textContent = item.category;
 
     info.appendChild(date);
     info.appendChild(meta);
     card.appendChild(info);
 
     card.addEventListener("dragstart", (e: DragEvent) => {
-        if (item.id === undefined) return;
         if (e.dataTransfer) {
-            e.dataTransfer.setData("text/plain", String(item.id));
+            e.dataTransfer.setData("text/plain", JSON.stringify(item));
             e.dataTransfer.effectAllowed = "move";
         }
     });
@@ -140,25 +151,21 @@ export async function refresh_boxes_management(): Promise<void> {
 
     const manager = get_db_manager();
     const boxes = await manager.get_boxes();
+    const box_weights = await manager.get_box_weights();
+    const zipped_boxes = boxes.map(box_id => {
+        const weight_entry = box_weights.find(entry => entry.box_id === box_id);
+        return { box_id, total_weight: weight_entry ? weight_entry.total_weight : 0 };
+    });
 
     if (boxes.length === 0) {
-        const empty_container = document.createElement("div");
-        empty_container.className = "empty-state";
-
-        const empty_image = document.createElement("img");
-        empty_image.src = "./empty_list.svg";
-        empty_image.alt = "Empty list";
-        empty_image.className = "empty-state-img";
-
-        empty_container.appendChild(empty_image);
-        boxes_container.appendChild(empty_container);
+        boxes_container.appendChild(empty_container());
         return;
     }
 
-    for (const box_id of boxes) {
+    for (const { box_id, total_weight } of zipped_boxes) {
         const items = await manager.get_box_content(box_id);
-        const item_elements = items.map(pair => create_draggable_item_element(pair.item, pair.category));
-        const box_el = new BoxElement(box_id, item_elements);
+        const item_elements = items.map(item => create_draggable_item_element(item));
+        const box_el = new BoxElement(box_id, total_weight, item_elements);
         boxes_container.appendChild(box_el.container);
     }
 }

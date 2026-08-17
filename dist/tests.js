@@ -241,35 +241,21 @@ export const DatabaseTests = {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
         try {
-            await manager.add_categories("Tuna", "Tushonka", "Klassika");
+            await manager.add_categories({ title: "Tuna", weight: 200 }, { title: "Tushonka", weight: 200 });
             const categories = await manager.get_categories();
             assert(categories.length === 3, `Expected 3 categories, got ${categories.length}`);
-            assert(categories.includes("Tuna"), "Tuna category not found");
-            assert(categories.includes("Tushonka"), "Tushonka category not found");
+            assert(categories.includes({ title: "Tuna", weight: 200 }), "Tuna category not found");
+            assert(categories.includes({ title: "Tushonka", weight: 200 }), "Tushonka category not found");
         }
         catch (e) {
             assert(false, `Add categories failed: ${e}`);
         }
     },
-    // --- 3. GET CATEGORIES ---
-    testGetCategories: async (assert) => {
-        const manager = await DatabaseTests.createTestDatabase();
-        await manager.init_tables();
-        await manager.add_categories("Cat1", "Cat2");
-        try {
-            const cats = await manager.get_categories();
-            assert(cats.length === 2, "Got wrong number of categories");
-            assert(cats[0] === "Cat1" || cats[1] === "Cat1", "Cat1 not in categories");
-        }
-        catch (e) {
-            assert(false, `Get categories failed: ${e}`);
-        }
-    },
-    // --- 4. ADD ITEMS ---
+    // --- 3. ADD ITEMS ---
     testAddItems: async (assert) => {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
-        await manager.add_categories("TestCat");
+        await manager.add_categories({ title: "TestCat", weight: 200 });
         try {
             await manager.add_items("TestCat", new Item(Date.now() + 1000000, 1, 0));
             await manager.add_items("TestCat", new Item(Date.now() + 2000000, 2, 1));
@@ -280,11 +266,11 @@ export const DatabaseTests = {
             assert(false, `Add items failed: ${e}`);
         }
     },
-    // --- 5. GET ITEMS ---
+    // --- 4. GET ITEMS ---
     testGetItems: async (assert) => {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
-        await manager.add_categories("Food");
+        await manager.add_categories({ title: "Food", weight: 200 });
         await manager.add_items("Food", new Item(Date.now() + 1000000, 1, 0));
         await manager.add_items("Food", new Item(Date.now() + 2000000, 2, 0));
         try {
@@ -296,11 +282,11 @@ export const DatabaseTests = {
             assert(false, `Get items failed: ${e}`);
         }
     },
-    // --- 6. REMOVE ITEMS ---
+    // --- 5. REMOVE ITEMS ---
     testRemoveItems: async (assert) => {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
-        await manager.add_categories("Stuff");
+        await manager.add_categories({ title: "Stuff", weight: 200 });
         await manager.add_items("Stuff", new Item(Date.now() + 1000000, 1));
         await manager.add_items("Stuff", new Item(Date.now() + 2000000, 2));
         try {
@@ -315,11 +301,11 @@ export const DatabaseTests = {
             assert(false, `Remove item failed: ${e}`);
         }
     },
-    // --- 7. UPDATE ITEMS ---
+    // --- 6. UPDATE ITEMS ---
     testUpdateItems: async (assert) => {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
-        await manager.add_categories("Boxes");
+        await manager.add_categories({ title: "Boxes", weight: 200 });
         await manager.add_items("Boxes", new Item(Date.now() + 1000000, 1, 0));
         try {
             await manager.update_item(1, { status: 1 });
@@ -332,11 +318,11 @@ export const DatabaseTests = {
             assert(false, `Update item failed: ${e}`);
         }
     },
-    // --- 8. STRESS TEST ---
+    // --- 7. STRESS TEST ---
     testStressDatabase: async (assert) => {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
-        await manager.add_categories("Stress");
+        await manager.add_categories({ title: "Stress", weight: 200 });
         try {
             const start = Date.now();
             // Add many items
@@ -358,7 +344,6 @@ export const DatabaseTests = {
         const { assert, getStats } = assertFactory();
         await this.testInitTables(assert);
         await this.testAddCategories(assert);
-        await this.testGetCategories(assert);
         await this.testAddItems(assert);
         await this.testGetItems(assert);
         await this.testRemoveItems(assert);

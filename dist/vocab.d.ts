@@ -1,4 +1,4 @@
-import { Item } from "./types.js";
+import { Item, type Category } from "./types.js";
 declare const LOCALES: {
     RU_PRISON: {
         item_repr_full: string;
@@ -21,6 +21,10 @@ declare const LOCALES: {
         label_status: string;
         selected_category: string;
         no_category_selected: string;
+        category_repr: string;
+        category_title_label: string;
+        category_weight_label: string;
+        weight: string;
         page_title_restore: string;
         header_restore: string;
         btn_export: string;
@@ -73,6 +77,10 @@ declare const LOCALES: {
         label_status: string;
         selected_category: string;
         no_category_selected: string;
+        category_repr: string;
+        category_title_label: string;
+        category_weight_label: string;
+        weight: string;
         page_title_restore: string;
         header_restore: string;
         btn_export: string;
@@ -125,6 +133,10 @@ declare const LOCALES: {
         label_status: string;
         selected_category: string;
         no_category_selected: string;
+        category_repr: string;
+        category_title_label: string;
+        category_weight_label: string;
+        weight: string;
         page_title_restore: string;
         header_restore: string;
         btn_export: string;
@@ -177,6 +189,10 @@ declare const LOCALES: {
         label_status: string;
         selected_category: string;
         no_category_selected: string;
+        category_repr: string;
+        category_title_label: string;
+        category_weight_label: string;
+        weight: string;
         page_title_restore: string;
         header_restore: string;
         btn_export: string;
@@ -214,6 +230,6 @@ export type Locales = keyof typeof LOCALES;
 export declare function getCurrentLocale(): LocaleType;
 export declare function renderPattern(key: keyof LocaleType, params?: Record<string, any>): string;
 export declare function localizeDOM(): void;
-export declare function repr(item: Item, category?: string | undefined): string;
+export declare function repr(item: Item, category?: Category | undefined): string;
 export {};
 //# sourceMappingURL=vocab.d.ts.map

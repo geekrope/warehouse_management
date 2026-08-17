@@ -1,5 +1,6 @@
 import { add_log_entry, get_element, DynamicForm } from "./dom_utils.js";
 import { get_db_manager, refresh, get_categories_list } from "./index.js";
+import type { Category } from "./types.js";
 import { renderPattern } from "./vocab.js";
 
 let category_form: DynamicForm | undefined = undefined;
@@ -8,7 +9,12 @@ async function add_category() {
     if (!category_form) return;
     const manager = get_db_manager();
     const values = category_form.get_values();
-    const category = String(values["newCategory"] ?? "").trim();
+    const category_name = String(values["newCategory"] ?? "").trim();
+    const category_weight = values["weight"];
+    const category: Category = {
+        title: category_name,
+        weight: category_weight as number | undefined
+    };
 
     try {
         if (!category) throw new Error("Category cannot be empty");
@@ -32,9 +38,15 @@ export function init_category_management() {
         [
             {
                 name: "newCategory",
-                label: "",
+                label: renderPattern("category_input"),
                 placeholder: renderPattern("category_input"),
                 type: "text"
+            },
+            {
+                name: "weight",
+                label: "",
+                type: "number",
+                step: 0.01
             }
         ],
         renderPattern("add_category_btn"),
@@ -46,12 +58,13 @@ export function init_category_management() {
     categoryCard.appendChild(category_form.form);
 }
 
-export function refresh_category_management(categories: string[]) {
+export function refresh_category_management() {
     const categoriesList = document.getElementById("categoriesList") as HTMLDivElement | null;
     if (!categoriesList) return;
     categoriesList.innerHTML = "";
 
     const manager = get_db_manager();
+    const categories = get_categories_list();
 
     for (const cat of categories) {
         const card = document.createElement("div");
@@ -59,7 +72,7 @@ export function refresh_category_management(categories: string[]) {
 
         const info = document.createElement("div");
         info.className = "item-info";
-        info.textContent = cat;
+        info.textContent = renderPattern("category_repr", { title:cat.title,  weight: cat.weight ?? "N/A" });
 
         const btnGroup = document.createElement("div");
         btnGroup.className = "button-group";
@@ -70,7 +83,7 @@ export function refresh_category_management(categories: string[]) {
         deleteBtn.textContent = renderPattern("btn_delete");
         deleteBtn.addEventListener("click", async () => {
             try {
-                await manager.remove_category(cat);
+                await manager.remove_category(cat.title);
                 add_log_entry(renderPattern("log_delete_cat", { val: cat }), "categoriesLog");
         
                 await refresh();

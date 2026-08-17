@@ -27,7 +27,6 @@ export declare const DatabaseTests: {
     createTestDatabase: () => Promise<DatabaseManager>;
     testInitTables: (assert: AssertFunc) => Promise<void>;
     testAddCategories: (assert: AssertFunc) => Promise<void>;
-    testGetCategories: (assert: AssertFunc) => Promise<void>;
     testAddItems: (assert: AssertFunc) => Promise<void>;
     testGetItems: (assert: AssertFunc) => Promise<void>;
     testRemoveItems: (assert: AssertFunc) => Promise<void>;

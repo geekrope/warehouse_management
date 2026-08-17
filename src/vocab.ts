@@ -24,6 +24,10 @@ const LOCALES = {
         label_status: "КЕМ ПО ЖИЗНИ БУДЕШЬ",
         selected_category: "ВЫБРАННАЯ МАСТЬ: {category}",
         no_category_selected: "МАСТЬ НЕ ВЫБРАНА",
+        category_repr: "МАСТЬ {title} ВЕС {weight} г",
+        category_title_label: "МАСТЬ",
+        category_weight_label: "ВЕС",
+        weight: "ВЕС {weight} г",
 
         page_title_restore: "КУБЫШКА",
         header_restore: "КОНСПИРАТИВНАЯ ХАТА",
@@ -81,6 +85,10 @@ const LOCALES = {
         label_status: "STATUS",
         selected_category: "SELECTED CATEGORY: {category}",
         no_category_selected: "CATEGORY NOT SELECTED",
+        category_repr: "CATEGORY {title} WEIGHT {weight} g",
+        category_title_label: "CATEGORY",
+        category_weight_label: "WEIGHT",
+        weight: "WEIGHT {weight} g",
 
         page_title_restore: "BACKUP",
         header_restore: "DATA MANAGEMENT",
@@ -138,6 +146,10 @@ const LOCALES = {
         label_status: "КАКОЕ СОСТОЯНIЕ",
         selected_category: "ВЫБРАННЫЙ РОД: {category}",
         no_category_selected: "РОДЪ НЕ ВЫБРАНЪ",
+        category_repr: "РОДЪ {title} ВЕС {weight} г",
+        category_title_label: "РОДЪ",
+        category_weight_label: "ВЕС",
+        weight: "ВЕС {weight} г",
 
         page_title_restore: "КЛАДОВАЯ ПАМЯТИ",
         header_restore: "РАСПОРЯЖЕНIЕ ДОБРОМЪ",
@@ -195,6 +207,10 @@ const LOCALES = {
         label_status: "СТАТУС",
         selected_category: "ВЫБРАННАЯ КАТЕГОРИЯ: {category}",
         no_category_selected: "КАТЕГОРИЯ НЕ ВЫБРАНА",
+        category_repr: "КАТЕГОРИЯ {title} ВЕС {weight} г",
+        category_title_label: "КАТЕГОРИЯ",
+        category_weight_label: "ВЕС",
+        weight: "ВЕС {weight} г",
 
         page_title_restore: "РЕЗЕРВНОЕ КОПИРОВАНИЕ",
         header_restore: "УПРАВЛЕНИЕ ДАННЫМИ",
@@ -267,13 +283,9 @@ export function localizeDOM(): void {
     });
 }
 
-export function repr(item: Item, category: string | undefined = undefined): string {
-    if (category === undefined) {
-        category = "UNKNOWN";
-    }
-
+export function repr(item: Item): string {
     return renderPattern("item_repr_full", {
-        cat: category,
+        cat: item.category || "Unknown",
         box: item.box_id,
         date: new Date(item.expiration_date).toLocaleDateString(),
         status: renderPattern(item.status === 0 ? "status_0" : "status_1")

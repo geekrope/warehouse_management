@@ -1,17 +1,17 @@
 import { add_log_entry, get_element, DynamicForm, CategoryInput } from "./dom_utils.js";
-import { get_db_manager, refresh, get_categories_list } from "./index.js";
+import { get_db_manager, refresh, get_category_titles } from "./index.js";
 import { renderPattern } from "./vocab.js";
 import { Item } from "./types.js";
 
 let intake_form: DynamicForm | undefined = undefined;
 
-function log_item_addition(success: boolean, category?: string, expiry_date?: Date, box_number?: number) {
-    if (success && category && expiry_date && box_number !== undefined) {
-        const date_str = expiry_date.toLocaleDateString();
+function log_item_addition(success: boolean, item?: Item) {
+    if (success && item) {
+        const date_str = new Date(item.expiration_date).toLocaleDateString();
         add_log_entry(renderPattern("log_add_item", {
-            cat: category,
+            cat: item.category,
             date: date_str,
-            box: box_number
+            box: item.box_id
         }), "intakeLog");
     } else {
         add_log_entry(renderPattern("log_add_fail"), "intakeLog", true);
@@ -23,7 +23,7 @@ async function add_item() {
 
     const manager = get_db_manager();
     const values = intake_form.get_values();
-    const categories = get_categories_list();
+    const categories = get_category_titles();
 
     const category = String(values["categoryInput"] ?? "").trim();
     const expiry_date = values["expiryDate"] instanceof Date ? values["expiryDate"] : undefined;
@@ -36,8 +36,9 @@ async function add_item() {
         }
         if (!categories.includes(category)) throw new Error("Category does not exist");
 
-        await manager.add_items(category, new Item(expiry_date.getTime(), box_number, status));        
-        log_item_addition(true, category, expiry_date, box_number);
+        const item = new Item(category, expiry_date.getTime(), box_number, status);
+        await manager.add_items(item);        
+        log_item_addition(true, item);
         await refresh();
     } catch (error) {
         console.error("Failed to add item:", error);
@@ -47,7 +48,7 @@ async function add_item() {
 
 export function init_intake() {
     const intakeCard = get_element<HTMLDivElement>("intakeCard");
-    const categories = get_categories_list();
+    const categories = get_category_titles();
 
     intake_form = new DynamicForm(
         [
@@ -66,7 +67,7 @@ export function init_intake() {
             {
                 name: "boxNumber",
                 label: renderPattern("label_box"),
-                type: "int"
+                type: "number"
             },
             {
                 name: "status",
@@ -87,9 +88,9 @@ export function init_intake() {
     intakeCard.appendChild(intake_form.form);
 }
 
-export function refresh_intake(categories: string[]) {
+export function refresh_intake() {
     const category_field = intake_form?.get_field<CategoryInput>("categoryInput");
     if (!category_field) throw new Error("Category field is not initialized");
     
-    category_field.categories = categories;
+    category_field.categories = get_category_titles();
 }

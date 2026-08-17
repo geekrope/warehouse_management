@@ -8,6 +8,7 @@ import { init_item_management, refresh_item_management } from "./item_management
 import { init_backup } from "./backup.js";
 import { init_boxes_management, refresh_boxes_management } from "./boxes_management.js";
 import { init_category_management, refresh_category_management } from "./category_management.js";
+import {} from "./types.js";
 let db_manager = undefined;
 let categories = [];
 export function get_db_manager() {
@@ -19,13 +20,20 @@ export function get_db_manager() {
 export function get_categories_list() {
     return categories;
 }
+export function get_category_titles() {
+    return categories.map(cat => cat.title);
+}
+export function locate_category(category_title) {
+    return categories.find(cat => cat.title === category_title);
+}
+// TODO: reinitialize each page when focus is regained
 export async function refresh() {
     if (!db_manager)
         return;
     categories = await db_manager.get_categories();
-    await refresh_item_management(categories);
-    refresh_category_management(categories);
-    refresh_intake(categories);
+    await refresh_item_management();
+    refresh_category_management();
+    refresh_intake();
     await refresh_boxes_management();
 }
 export async function main() {

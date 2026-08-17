@@ -1,7 +1,8 @@
 import { Item, item_less } from "./types.js";
+import type { Category } from "./types.js";
 import { heapify, partial_heapsort } from "./heap.js";
-import { add_log_entry, get_element, CategoryInput } from "./dom_utils.js";
-import { get_db_manager, refresh, get_categories_list } from "./index.js";
+import { add_log_entry, get_element, CategoryInput, empty_container } from "./dom_utils.js";
+import { get_db_manager, refresh, get_category_titles, locate_category } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 
 const page_size: number = 5;
@@ -10,7 +11,7 @@ let storage_category_input: CategoryInput | undefined = undefined;
 let heap_ptr = -1;
 let pages: Item[][] = [];
 let items_heap: Item[] = [];
-let current_category: string | undefined = undefined;
+let current_category: Category | undefined = undefined;
 let current_page: number = 0;
 
 function get_category_input(): CategoryInput {
@@ -65,7 +66,7 @@ function render_item(item: Item): HTMLElement {
             const new_status_str = renderPattern(new_status === 0 ? "status_0" : "status_1");
 
             add_log_entry(renderPattern("log_update_status", {
-                meta: repr(item, current_category),
+                meta: repr(item),
                 status: new_status_str
             }), "storageLog");
 
@@ -85,7 +86,7 @@ function render_item(item: Item): HTMLElement {
             await get_db_manager().remove_item(item.id);
 
             add_log_entry(renderPattern("log_delete", {
-                meta: repr(item, current_category)
+                meta: repr(item)
             }), "storageLog");
 
             await refresh();
@@ -123,15 +124,7 @@ export function render_current_page() {
 
     itemsList.innerHTML = "";
     if (total_pages === 0) {
-        const emptyContainer = document.createElement("div");
-        emptyContainer.className = "empty-state";
-
-        const emptyImage = document.createElement("img");
-        emptyImage.src = "./empty_list.svg";
-        emptyImage.alt = "Empty list";
-        emptyImage.className = "empty-state-img";
-
-        emptyContainer.appendChild(emptyImage);
+        const emptyContainer = empty_container();
         itemsList.appendChild(emptyContainer);
     }
 
@@ -141,7 +134,7 @@ export function render_current_page() {
     }
 
     const total_items = items_heap.length;
-    itemCategory.textContent = current_category != undefined ? renderPattern("selected_category", { category: current_category }) : renderPattern("no_category_selected");
+    itemCategory.textContent = current_category != undefined ? renderPattern("selected_category", { category: current_category.title }) : renderPattern("no_category_selected");
     itemCount.textContent = renderPattern("count_label", { count: total_items });
     pageIndicator.textContent = renderPattern("page_number", { num: `${total_pages === 0 ? 0 : current_page + 1}/${total_pages}` });
 
@@ -164,7 +157,7 @@ async function load_items() {
 
         if (current_category === undefined) { return; }
 
-        const items = await manager.get_items(current_category);
+        const items = await manager.get_items(current_category.title);
         items_heap = [...items];
         heap_ptr = items_heap.length - 1;
         heapify(items_heap, item_less);
@@ -173,24 +166,19 @@ async function load_items() {
     }
 }
 
-function update_selected_category(new_category: string) {
-    if (get_categories_list().includes(new_category)) {
-        current_category = new_category;
-    } else {
-        current_category = undefined;
-    }
+function update_selected_category(new_category: Category | undefined) {
+    current_category = new_category;
 }
 
 export function init_item_management() {
     const storageFilterCard = get_element<HTMLDivElement>("storageFilterCard");
-    const categories = get_categories_list();
 
     storage_category_input = new CategoryInput(
         "storageCategoryInput",
-        categories,
+        get_category_titles(),
         renderPattern("item_placeholder"),
         async (val) => {
-            update_selected_category(val);
+            update_selected_category(locate_category(val));
             await load_items();
             render_current_page();
         }
@@ -215,11 +203,11 @@ export function init_item_management() {
     });
 }
 
-export async function refresh_item_management(categories: string[]) {
+export async function refresh_item_management() {
     const category_input = get_category_input();
-    category_input.categories = categories;
+    category_input.categories = get_category_titles();
 
-    update_selected_category(category_input.value);
+    update_selected_category(locate_category(current_category?.title ?? ""));
     await load_items();
     render_current_page();
 }

@@ -9,4 +9,8 @@ export declare class Item {
     repr(include_index?: boolean): string;
 }
 export declare function item_less(a: Item, b: Item): boolean;
+export type Category = {
+    title: string;
+    weight: number | undefined;
+};
 //# sourceMappingURL=types.d.ts.map

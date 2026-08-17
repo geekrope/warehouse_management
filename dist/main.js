@@ -8,7 +8,8 @@ export class DatabaseManager {
     async init_tables() {
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL UNIQUE);`);
+            title TEXT NOT NULL UNIQUE,
+            weight REAL DEFAULT NULL);`);
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             category_id INTEGER NOT NULL,
@@ -28,20 +29,21 @@ export class DatabaseManager {
         }
         return category_id[0];
     }
-    async add_categories(...titles) {
-        const values_clause = titles.map(() => "(?)").join(", ");
+    async add_categories(...categories) {
+        const values_clause = categories.map(() => "(?, ?)").join(", ");
+        const values = categories.flatMap(cat => [cat.title, cat.weight]);
         await this.db_driver.run(`INSERT INTO categories 
-            (title) 
-            VALUES ${values_clause};`, titles);
+            (title, weight) 
+            VALUES ${values_clause};`, values);
     }
     async remove_category(title) {
         await this.db_driver.run(`DELETE FROM categories
             WHERE title = :title;`, { ":title": title });
     }
     async get_categories() {
-        return await this.db_driver.query(`SELECT title 
+        return await this.db_driver.query(`SELECT title, weight 
             FROM categories 
-            ORDER BY title ASC;`, (obj) => obj.title);
+            ORDER BY title ASC;`, (obj) => { return { title: obj.title, weight: obj.weight }; });
     }
     async add_items(category, ...item) {
         const category_id = await this.get_category_id(category);
@@ -79,6 +81,12 @@ export class DatabaseManager {
             FROM items
             WHERE remove_date IS NULL
             ORDER BY box_id ASC;`, (obj) => obj.box_id);
+    }
+    async get_box_weights() {
+        return await this.db_driver.query(`SELECT I.box_id as box_id, SUM(COALESCE(C.weight, 0)) AS total_weight
+            FROM items AS I
+            JOIN categories AS C ON I.category_id = C.id
+            GROUP BY I.box_id`, (obj) => { return { box_id: obj.box_id, total_weight: obj.total_weight }; });
     }
     async get_box_content(box_id) {
         return await this.db_driver.query(`SELECT I.*, C.title AS category

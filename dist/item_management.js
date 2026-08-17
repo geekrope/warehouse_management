@@ -1,7 +1,7 @@
 import { Item, item_less } from "./types.js";
 import { heapify, partial_heapsort } from "./heap.js";
-import { add_log_entry, get_element, CategoryInput } from "./dom_utils.js";
-import { get_db_manager, refresh, get_categories_list } from "./index.js";
+import { add_log_entry, get_element, CategoryInput, empty_container } from "./dom_utils.js";
+import { get_db_manager, refresh, get_category_titles, locate_category } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 const page_size = 5;
 let storage_category_input = undefined;
@@ -102,13 +102,7 @@ export function render_current_page() {
     const total_pages = pages_count();
     itemsList.innerHTML = "";
     if (total_pages === 0) {
-        const emptyContainer = document.createElement("div");
-        emptyContainer.className = "empty-state";
-        const emptyImage = document.createElement("img");
-        emptyImage.src = "./empty_list.svg";
-        emptyImage.alt = "Empty list";
-        emptyImage.className = "empty-state-img";
-        emptyContainer.appendChild(emptyImage);
+        const emptyContainer = empty_container();
         itemsList.appendChild(emptyContainer);
     }
     threshold_page();
@@ -116,7 +110,7 @@ export function render_current_page() {
         next_page();
     }
     const total_items = items_heap.length;
-    itemCategory.textContent = current_category != undefined ? renderPattern("selected_category", { category: current_category }) : renderPattern("no_category_selected");
+    itemCategory.textContent = current_category != undefined ? renderPattern("selected_category", { category: current_category.title }) : renderPattern("no_category_selected");
     itemCount.textContent = renderPattern("count_label", { count: total_items });
     pageIndicator.textContent = renderPattern("page_number", { num: `${total_pages === 0 ? 0 : current_page + 1}/${total_pages}` });
     prevBtn.disabled = current_page === 0;
@@ -135,7 +129,7 @@ async function load_items() {
         if (current_category === undefined) {
             return;
         }
-        const items = await manager.get_items(current_category);
+        const items = await manager.get_items(current_category.title);
         items_heap = [...items];
         heap_ptr = items_heap.length - 1;
         heapify(items_heap, item_less);
@@ -145,18 +139,12 @@ async function load_items() {
     }
 }
 function update_selected_category(new_category) {
-    if (get_categories_list().includes(new_category)) {
-        current_category = new_category;
-    }
-    else {
-        current_category = undefined;
-    }
+    current_category = new_category;
 }
 export function init_item_management() {
     const storageFilterCard = get_element("storageFilterCard");
-    const categories = get_categories_list();
-    storage_category_input = new CategoryInput("storageCategoryInput", categories, renderPattern("item_placeholder"), async (val) => {
-        update_selected_category(val);
+    storage_category_input = new CategoryInput("storageCategoryInput", get_category_titles(), renderPattern("item_placeholder"), async (val) => {
+        update_selected_category(locate_category(val));
         await load_items();
         render_current_page();
     });
@@ -176,10 +164,10 @@ export function init_item_management() {
         }
     });
 }
-export async function refresh_item_management(categories) {
+export async function refresh_item_management() {
     const category_input = get_category_input();
-    category_input.categories = categories;
-    update_selected_category(category_input.value);
+    category_input.categories = get_category_titles();
+    update_selected_category(locate_category(current_category?.title ?? ""));
     await load_items();
     render_current_page();
 }

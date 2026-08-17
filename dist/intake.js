@@ -1,5 +1,5 @@
 import { add_log_entry, get_element, DynamicForm, CategoryInput } from "./dom_utils.js";
-import { get_db_manager, refresh, get_categories_list } from "./index.js";
+import { get_db_manager, refresh, get_category_titles, locate_category } from "./index.js";
 import { renderPattern } from "./vocab.js";
 import { Item } from "./types.js";
 let intake_form = undefined;
@@ -7,7 +7,7 @@ function log_item_addition(success, category, expiry_date, box_number) {
     if (success && category && expiry_date && box_number !== undefined) {
         const date_str = expiry_date.toLocaleDateString();
         add_log_entry(renderPattern("log_add_item", {
-            cat: category,
+            cat: category.title,
             date: date_str,
             box: box_number
         }), "intakeLog");
@@ -21,7 +21,7 @@ async function add_item() {
         throw new Error("Intake form is not initialized");
     const manager = get_db_manager();
     const values = intake_form.get_values();
-    const categories = get_categories_list();
+    const categories = get_category_titles();
     const category = String(values["categoryInput"] ?? "").trim();
     const expiry_date = values["expiryDate"] instanceof Date ? values["expiryDate"] : undefined;
     const box_number = typeof values["boxNumber"] === "number" ? values["boxNumber"] : NaN;
@@ -33,7 +33,7 @@ async function add_item() {
         if (!categories.includes(category))
             throw new Error("Category does not exist");
         await manager.add_items(category, new Item(expiry_date.getTime(), box_number, status));
-        log_item_addition(true, category, expiry_date, box_number);
+        log_item_addition(true, locate_category(category), expiry_date, box_number);
         await refresh();
     }
     catch (error) {
@@ -43,7 +43,7 @@ async function add_item() {
 }
 export function init_intake() {
     const intakeCard = get_element("intakeCard");
-    const categories = get_categories_list();
+    const categories = get_category_titles();
     intake_form = new DynamicForm([
         {
             name: "categoryInput",
@@ -60,7 +60,7 @@ export function init_intake() {
         {
             name: "boxNumber",
             label: renderPattern("label_box"),
-            type: "int"
+            type: "number"
         },
         {
             name: "status",
@@ -77,10 +77,10 @@ export function init_intake() {
     intake_form.form.id = "intakeForm";
     intakeCard.appendChild(intake_form.form);
 }
-export function refresh_intake(categories) {
+export function refresh_intake() {
     const category_field = intake_form?.get_field("categoryInput");
     if (!category_field)
         throw new Error("Category field is not initialized");
-    category_field.categories = categories;
+    category_field.categories = get_category_titles();
 }
 //# sourceMappingURL=intake.js.map

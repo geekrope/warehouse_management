@@ -7,7 +7,12 @@ async function add_category() {
         return;
     const manager = get_db_manager();
     const values = category_form.get_values();
-    const category = String(values["newCategory"] ?? "").trim();
+    const category_name = String(values["newCategory"] ?? "").trim();
+    const category_weight = values["weight"];
+    const category = {
+        title: category_name,
+        weight: category_weight
+    };
     try {
         if (!category)
             throw new Error("Category cannot be empty");
@@ -28,9 +33,15 @@ export function init_category_management() {
     category_form = new DynamicForm([
         {
             name: "newCategory",
-            label: "",
+            label: renderPattern("category_input"),
             placeholder: renderPattern("category_input"),
             type: "text"
+        },
+        {
+            name: "weight",
+            label: "",
+            type: "number",
+            step: 0.01
         }
     ], renderPattern("add_category_btn"), async () => {
         await add_category();
@@ -38,18 +49,19 @@ export function init_category_management() {
     category_form.form.id = "categoryForm";
     categoryCard.appendChild(category_form.form);
 }
-export function refresh_category_management(categories) {
+export function refresh_category_management() {
     const categoriesList = document.getElementById("categoriesList");
     if (!categoriesList)
         return;
     categoriesList.innerHTML = "";
     const manager = get_db_manager();
+    const categories = get_categories_list();
     for (const cat of categories) {
         const card = document.createElement("div");
         card.className = "item-card";
         const info = document.createElement("div");
         info.className = "item-info";
-        info.textContent = cat;
+        info.textContent = renderPattern("category_repr", { title: cat.title, weight: cat.weight ?? "N/A" });
         const btnGroup = document.createElement("div");
         btnGroup.className = "button-group";
         btnGroup.style.marginTop = "0";
@@ -58,7 +70,7 @@ export function refresh_category_management(categories) {
         deleteBtn.textContent = renderPattern("btn_delete");
         deleteBtn.addEventListener("click", async () => {
             try {
-                await manager.remove_category(cat);
+                await manager.remove_category(cat.title);
                 add_log_entry(renderPattern("log_delete_cat", { val: cat }), "categoriesLog");
                 await refresh();
             }

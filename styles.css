@@ -392,8 +392,6 @@ button {
     flex-direction: column;
     gap: 12px;
     transition: all 0.2s ease;
-    max-height: 400px;
-    overflow-y: auto;
 }
 
 .box-card.drag-over {

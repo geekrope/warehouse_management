@@ -17,6 +17,18 @@ export function add_log_entry(message: string, container_id: string, is_error: b
     log_element.scrollTop = log_element.scrollHeight;
 }
 
+export function empty_container(): HTMLDivElement {
+    const emptyContainer = document.createElement("div");
+    emptyContainer.className = "empty-state";
+
+    const emptyImage = document.createElement("img");
+    emptyImage.src = "./empty_list.svg";
+    emptyImage.className = "empty-state-img";
+
+    emptyContainer.appendChild(emptyImage);
+    return emptyContainer;
+}
+
 export class CategoryInput {
     public container: HTMLDivElement;
     public input: HTMLInputElement;
@@ -49,17 +61,8 @@ export class CategoryInput {
 
         this.on_change = on_change;
 
-        this.input.addEventListener("input", this.on_input_change.bind(this));
-        this.input.addEventListener("change", this.on_input_change.bind(this));
-
+        this.input.addEventListener("change", (() => { if (this.on_change !== undefined) this.on_change(this.input.value.trim()); }).bind(this));
         this.categories = categories;
-    }
-
-    private on_input_change(_event?: Event): void {
-        this.update_datalist(this.input.value);
-        if (this.on_change) {
-            this.on_change(this.input.value.trim());
-        }
     }
 
     public get categories(): string[] {
@@ -68,20 +71,13 @@ export class CategoryInput {
 
     public set categories(new_categories: string[]) {
         this._categories = new_categories;
-        this.update_datalist(this.input.value);
+        this.update_datalist();
     }
 
-    public update_datalist(filter_value: string = ""): void {
+    public update_datalist(): void {
         this.datalist.innerHTML = "";
 
-        if (this.categories.includes(filter_value)) return;
-
-        const query = filter_value.toLowerCase();
-        const filtered = this._categories.filter(cat =>
-            cat.toLowerCase().includes(query)
-        );
-
-        for (const cat of filtered) {
+        for (const cat of this.categories) {
             const option = document.createElement("option");
             option.value = cat;
             this.datalist.appendChild(option);
@@ -94,11 +90,10 @@ export class CategoryInput {
 
     public set value(val: string) {
         this.input.value = val;
-        this.update_datalist(val);
     }
 }
 
-export type FieldType = "text" | "int" | "date" | "categorical" | "select";
+export type FieldType = "text" | "number" | "date" | "categorical" | "select";
 
 export type BaseFieldConfig = {
     name: string;
@@ -107,8 +102,15 @@ export type BaseFieldConfig = {
 };
 
 export type StandardFieldConfig = BaseFieldConfig & {
-    type: "text" | "int" | "date";
+    type: "text" | "date";
     placeholder?: string;
+};
+
+export type NumericalFieldConfig = BaseFieldConfig & {
+    type: "number";
+    step?: number;
+    min?: number;
+    max?: number;
 };
 
 export type CategoricalFieldConfig = BaseFieldConfig & {
@@ -128,7 +130,7 @@ export type SelectFieldConfig = BaseFieldConfig & {
     options: SelectOption[];
 };
 
-export type FieldConfig = StandardFieldConfig | CategoricalFieldConfig | SelectFieldConfig;
+export type FieldConfig = StandardFieldConfig | NumericalFieldConfig | CategoricalFieldConfig | SelectFieldConfig;
 
 export type FormFieldControl = HTMLInputElement | CategoryInput | HTMLSelectElement;
 
@@ -186,9 +188,14 @@ export class DynamicForm {
                 break;
             }
             case "text":
-            case "int":
             case "date": {
                 const input = this.build_standard_input(field);
+                control = input;
+                form_group.appendChild(input);
+                break;
+            }
+            case "number": {
+                const input = this.build_numerical_input(field);
                 control = input;
                 form_group.appendChild(input);
                 break;
@@ -233,14 +240,25 @@ export class DynamicForm {
         input.placeholder = field.placeholder ?? "";
         input.required = field.required ?? true;
 
-        if (field.type === "int") {
-            input.type = "number";
-            input.step = "1";
-        } else if (field.type === "date") {
+        if (field.type === "date") {
             input.type = "date";
         } else {
             input.type = "text";
         }
+
+        return input;
+    }
+
+    private build_numerical_input(field: NumericalFieldConfig): HTMLInputElement {
+        const input = document.createElement("input");
+        input.id = field.name;
+        input.name = field.name;
+        input.required = field.required ?? true;
+        input.type = "number";
+
+        if (field.step !== undefined) input.step = String(field.step);
+        if (field.min !== undefined) input.min = String(field.min);
+        if (field.max !== undefined) input.max = String(field.max);        
 
         return input;
     }
