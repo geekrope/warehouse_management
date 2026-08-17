@@ -1,15 +1,15 @@
 import { add_log_entry, get_element, DynamicForm, CategoryInput } from "./dom_utils.js";
-import { get_db_manager, refresh, get_category_titles, locate_category } from "./index.js";
+import { get_db_manager, refresh, get_category_titles } from "./index.js";
 import { renderPattern } from "./vocab.js";
 import { Item } from "./types.js";
 let intake_form = undefined;
-function log_item_addition(success, category, expiry_date, box_number) {
-    if (success && category && expiry_date && box_number !== undefined) {
-        const date_str = expiry_date.toLocaleDateString();
+function log_item_addition(success, item) {
+    if (success && item) {
+        const date_str = new Date(item.expiration_date).toLocaleDateString();
         add_log_entry(renderPattern("log_add_item", {
-            cat: category.title,
+            cat: item.category,
             date: date_str,
-            box: box_number
+            box: item.box_id
         }), "intakeLog");
     }
     else {
@@ -32,8 +32,9 @@ async function add_item() {
         }
         if (!categories.includes(category))
             throw new Error("Category does not exist");
-        await manager.add_items(category, new Item(expiry_date.getTime(), box_number, status));
-        log_item_addition(true, locate_category(category), expiry_date, box_number);
+        const item = new Item(category, expiry_date.getTime(), box_number, status);
+        await manager.add_items(item);
+        log_item_addition(true, item);
         await refresh();
     }
     catch (error) {

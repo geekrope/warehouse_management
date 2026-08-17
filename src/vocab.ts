@@ -1,4 +1,4 @@
-import { Item } from "./types.js";
+import { Item, type Category } from "./types.js";
 
 const LOCALE_REGEX = /\{(\w+)\}/g;
 
@@ -13,6 +13,12 @@ const LOCALES = {
         header_storage: "СХРОН ХАТЫ",
         header_categories: "МАСТИ И ПОГОНЯЛА",
         header_boxes: "ХАТЫ",
+        header_boxes_graph: "СХЕМА ЦЕНТРАЛА И ДОСТУПНОСТИ",
+        graph_box_label: "ХАТА {id}\nВЕС: {weight} г\nСНЯТЬ: {cost} г",
+        th_box: "ХАТА",
+        th_weight: "ВЕС ХАТЫ",
+        th_access_cost: "ВОРОЧАТЬ",
+        direct_access: "БЕЗ ШЕСТЕРОК",
         categories_list_header: "СПИСОК МАСТЕЙ",
         box_item_count: "ГОЛОВ В ХАТЕ: {count}",
         category_input: "ВВЕДИТЕ МАСТЬ",
@@ -58,7 +64,7 @@ const LOCALES = {
         log_update_status: "{meta} СТАТУС {status}",
         log_delete: "ШВАРКНУЛИ {meta}",
         log_move: "ЭТАПИРОВАЛИ {meta} В ХАТУ {box}",
-        log_move_fail: "ПАССАЖИР {meta} НЕ ДОЕХАЛ ДО ХАТЫ {box}",    
+        log_move_fail: "ПАССАЖИР {meta} НЕ ДОЕХАЛ ДО ХАТЫ {box}",
         log_import: "ЗАНЕСЛИ В ОБЩАК",
         log_export: "ОБЩАК ВЫВЕДЕН В ОФШОР",
         version: "СИСТЕМА ГРАБЕЖ™ v2.0"
@@ -74,6 +80,12 @@ const LOCALES = {
         header_storage: "STORAGE INVENTORY",
         header_categories: "CATEGORY MANAGEMENT",
         header_boxes: "BOXES OVERVIEW",
+        header_boxes_graph: "BOXES STACKING GRAPH & ACCESSIBILITY",
+        graph_box_label: "BOX {id}\nWEIGHT: {weight} g\nTO CLEAR: {cost} g",
+        th_box: "BOX #",
+        th_weight: "BOX WEIGHT",
+        th_access_cost: "CLEARANCE WEIGHT",
+        direct_access: "DIRECT ACCESS",
         categories_list_header: "ALL CATEGORIES",
         box_item_count: "ITEMS IN BOX: {count}",
         category_input: "ENTER CATEGORY",
@@ -120,8 +132,8 @@ const LOCALES = {
         log_delete: "DELETED {meta}",
         log_move: "MOVED {meta} TO BOX {box}",
         log_import: "ARCHIVE IMPORTED INTO STORAGE",
-        log_export: "ARCHIVE EXPORTED FROM STORAGE",   
-        log_move_fail: "FAILED TO MOVE {meta} TO BOX {box}",     
+        log_export: "ARCHIVE EXPORTED FROM STORAGE",
+        log_move_fail: "FAILED TO MOVE {meta} TO BOX {box}",
         version: "Inventory Management System v2.0"
     },
 
@@ -135,6 +147,12 @@ const LOCALES = {
         header_storage: "ОПИСЬ ПОГРЕБА",
         header_categories: "УПРАВЛЕНIЕ РОДАМИ",
         header_boxes: "ОПИСЬ ПОЛОКЪ",
+        header_boxes_graph: "ЧЕРТЕЖЪ ПОЛОКЪ И ДОСТУПА",
+        graph_box_label: "ПОЛКА {id}\nВЕСЪ: {weight} г\nСНЯТИ: {cost} г",
+        th_box: "ПОЛКА",
+        th_weight: "ВЕСЪ ПОЛКИ",
+        th_access_cost: "ТЯЖЕСТЬ СНЯТИЯ",
+        direct_access: "ПРЯМОЙ ДОСТУПЪ",
         categories_list_header: "СПИСОКЪ РОДОВЪ",
         box_item_count: "ДОБРА НА ПОЛКѢ: {count}",
         category_input: "ВВЕДИ РОДЪ ЯСТВА",
@@ -196,6 +214,12 @@ const LOCALES = {
         header_storage: "ОБЗОР СКЛАДА",
         header_categories: "УПРАВЛЕНИЕ КАТЕГОРИЯМИ",
         header_boxes: "ОБЗОР ЯЧЕЕК",
+        header_boxes_graph: "ГРАФ ДОСТУПНОСТИ И ШТАБЕЛИРОВАНИЯ ЯЧЕЕК",
+        graph_box_label: "ЯЧЕЙКА {id}\nВЕС: {weight} г\nДОСТУП: {cost} г",
+        th_box: "ЯЧЕЙКА",
+        th_weight: "СОБСТВЕННЫЙ ВЕС",
+        th_access_cost: "ВЕС ДЛЯ СНЯТИЯ",
+        direct_access: "ПРЯМОЙ ДОСТУП",
         categories_list_header: "СПИСОК КАТЕГОРИЙ",
         box_item_count: "ЕДИНИЦ В ЯЧЕЙКЕ: {count}",
         category_input: "ВВЕДИТЕ КАТЕГОРИЮ",
@@ -283,11 +307,19 @@ export function localizeDOM(): void {
     });
 }
 
-export function repr(item: Item): string {
-    return renderPattern("item_repr_full", {
-        cat: item.category || "Unknown",
-        box: item.box_id,
-        date: new Date(item.expiration_date).toLocaleDateString(),
-        status: renderPattern(item.status === 0 ? "status_0" : "status_1")
-    });
+export function repr(item: Item | Category): string {
+    if (item instanceof Item) {
+        return renderPattern("item_repr_full", {
+            cat: item.category,
+            box: item.box_id,
+            date: new Date(item.expiration_date).toLocaleDateString(),
+            status: renderPattern(item.status === 0 ? "status_0" : "status_1")
+        });
+    }
+    else {
+        return renderPattern("category_repr", {
+            title: item.title,
+            weight: item.weight !== undefined ? item.weight.toString() : "N/A"
+        });
+    }
 }

@@ -25,10 +25,6 @@ export class Item {
         if (!Item.validate(item)) { throw TypeError("Missing required properties: category, expiration_date, box_id") }
         return new Item(item.category, item.expiration_date, item.box_id, item.status ?? 0, item.id ?? undefined);
     }
-
-    repr(include_index = false): string {
-        return `Category: ${this.category}, Best before: ${new Date(this.expiration_date).toLocaleDateString()}, Box: ${this.box_id}, Status: ${this.status} ${include_index ? `, Index: ${this.id}` : ``}`
-    }
 }
 
 export function item_less(a: Item, b: Item): boolean {

@@ -20,14 +20,15 @@ export class DatabaseManager {
             remove_date INTEGER DEFAULT NULL,
             FOREIGN KEY (category_id) REFERENCES categories(id));`);
     }
-    async get_category_id(category) {
-        const category_id = await this.db_driver.query(`SELECT id 
+    async get_category_ids(...categories) {
+        categories = Array.from(new Set(categories));
+        if (categories.length === 0)
+            return new Map();
+        const where_clause = categories.map(() => "?").join(", ");
+        const category_ids = await this.db_driver.query(`SELECT title, id 
             FROM categories 
-            WHERE title = :category;`, (obj) => obj.id, { ":category": category });
-        if (category_id.length === 0) {
-            throw new Error(`Category "${category}" does not exist.`);
-        }
-        return category_id[0];
+            WHERE title IN (${where_clause});`, (obj) => { return { key: obj.title, value: obj.id }; }, categories);
+        return new Map(category_ids.map(({ key, value }) => [key, value]));
     }
     async add_categories(...categories) {
         const values_clause = categories.map(() => "(?, ?)").join(", ");
@@ -45,9 +46,16 @@ export class DatabaseManager {
             FROM categories 
             ORDER BY title ASC;`, (obj) => { return { title: obj.title, weight: obj.weight }; });
     }
-    async add_items(category, ...item) {
-        const category_id = await this.get_category_id(category);
-        const flattened_values = item.flatMap(i => [category_id, i.box_id, i.expiration_date, i.status, Date.now()]);
+    async add_items(...item) {
+        if (item.length === 0)
+            return;
+        const category_map = await this.get_category_ids(...item.map(i => i.category));
+        for (const i of item) {
+            if (!category_map.has(i.category)) {
+                throw new Error(`Category "${i.category}" does not exist.`);
+            }
+        }
+        const flattened_values = item.flatMap(i => [category_map.get(i.category), i.box_id, i.expiration_date, i.status, Date.now()]);
         const clause = item.map(() => "(?, ?, ?, ?, ?)").join(", ");
         await this.db_driver.run(`INSERT INTO items 
             (category_id, box_id, expiration_date, status, add_date) 
@@ -59,7 +67,17 @@ export class DatabaseManager {
             WHERE id = :id;`, { ":date": Date.now(), ":id": id });
     }
     async update_item(id, args) {
-        const entries = Object.entries(args).filter(([_, val]) => val !== undefined);
+        const { category, ...rest } = args;
+        const update_obj = { ...rest };
+        if (category !== undefined) {
+            const category_map = await this.get_category_ids(category);
+            const category_id = category_map.get(category);
+            if (category_id === undefined) {
+                throw new Error(`Category "${category}" does not exist.`);
+            }
+            update_obj["category_id"] = category_id;
+        }
+        const entries = Object.entries(update_obj).filter(([_, val]) => val !== undefined);
         if (entries.length === 0)
             return;
         const keys = entries.map(([key, _]) => key);
@@ -70,7 +88,7 @@ export class DatabaseManager {
             WHERE id = ?;`, values.concat([id]));
     }
     async get_items(category) {
-        return await this.db_driver.query(`SELECT I.*
+        return await this.db_driver.query(`SELECT I.*, C.title AS category
             FROM items AS I
             LEFT JOIN categories as C ON I.category_id = C.id 
             WHERE C.title = :category
@@ -86,6 +104,7 @@ export class DatabaseManager {
         return await this.db_driver.query(`SELECT I.box_id as box_id, SUM(COALESCE(C.weight, 0)) AS total_weight
             FROM items AS I
             JOIN categories AS C ON I.category_id = C.id
+            WHERE I.remove_date IS NULL
             GROUP BY I.box_id`, (obj) => { return { box_id: obj.box_id, total_weight: obj.total_weight }; });
     }
     async get_box_content(box_id) {
@@ -93,7 +112,7 @@ export class DatabaseManager {
             FROM items AS I
             JOIN categories AS C ON I.category_id = C.id
             WHERE I.box_id = :box_id AND I.remove_date IS NULL
-            ORDER BY C.title;`, (obj) => ({ item: Item.from(obj), category: obj.category }), { ":box_id": box_id });
+            ORDER BY C.title;`, Item.from, { ":box_id": box_id });
     }
     async get_snapshot(threshold) {
         return await this.db_driver.query(`SELECT C.title as title, COUNT(*) AS count

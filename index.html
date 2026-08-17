@@ -7,6 +7,7 @@
     <title></title>
     <link rel="stylesheet" href="styles.css">
     <script src="src/modules/sql-wasm.js"></script>
+    <script src="src/modules/vis-network.min.js"></script>
 </head>
 
 <body>
@@ -84,6 +85,12 @@
                 <div class="card" id="boxesCard">
                     <h2>🗃️ <span data-locale="header_boxes"></span></h2>
                     <div id="boxesContainer" class="boxes-container"></div>
+                </div>
+
+                <div class="card" id="boxesGraphCard">
+                    <h2>🕸️ <span data-locale="header_boxes_graph"></span></h2>
+                    <div id="boxesGraphContainer" class="graph-container"></div>
+                    <div id="boxesWeightsTableContainer" class="weights-table-container"></div>
                 </div>
 
                 <div class="card">
@@ -167,7 +174,7 @@
 
         if (debug) {
             HeapTests.run();
-            //DatabaseTests.run();
+            DatabaseTests.run();
         }
     </script>
 </body>

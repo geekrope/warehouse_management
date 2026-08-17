@@ -1,6 +1,6 @@
 import { add_log_entry, get_element, DynamicForm } from "./dom_utils.js";
 import { get_db_manager, refresh, get_categories_list } from "./index.js";
-import { renderPattern } from "./vocab.js";
+import { renderPattern, repr } from "./vocab.js";
 let category_form = undefined;
 async function add_category() {
     if (!category_form)
@@ -16,11 +16,11 @@ async function add_category() {
     try {
         if (!category)
             throw new Error("Category cannot be empty");
-        if (get_categories_list().includes(category))
+        if (get_categories_list().some(c => c.title === category.title))
             throw new Error("Category already exists");
         await manager.add_categories(category);
         category_form.reset();
-        add_log_entry(renderPattern("log_add_cat", { val: category }), "categoriesLog");
+        add_log_entry(renderPattern("log_add_cat", { val: repr(category) }), "categoriesLog");
         await refresh();
     }
     catch (error) {
@@ -33,15 +33,16 @@ export function init_category_management() {
     category_form = new DynamicForm([
         {
             name: "newCategory",
-            label: renderPattern("category_input"),
+            label: renderPattern("category_title_label"),
             placeholder: renderPattern("category_input"),
             type: "text"
         },
         {
             name: "weight",
-            label: "",
+            label: renderPattern("category_weight_label"),
             type: "number",
-            step: 0.01
+            step: 0.01,
+            min: 0
         }
     ], renderPattern("add_category_btn"), async () => {
         await add_category();
@@ -61,7 +62,7 @@ export function refresh_category_management() {
         card.className = "item-card";
         const info = document.createElement("div");
         info.className = "item-info";
-        info.textContent = renderPattern("category_repr", { title: cat.title, weight: cat.weight ?? "N/A" });
+        info.textContent = repr(cat);
         const btnGroup = document.createElement("div");
         btnGroup.className = "button-group";
         btnGroup.style.marginTop = "0";
@@ -71,7 +72,7 @@ export function refresh_category_management() {
         deleteBtn.addEventListener("click", async () => {
             try {
                 await manager.remove_category(cat.title);
-                add_log_entry(renderPattern("log_delete_cat", { val: cat }), "categoriesLog");
+                add_log_entry(renderPattern("log_delete_cat", { val: repr(cat) }), "categoriesLog");
                 await refresh();
             }
             catch (error) {

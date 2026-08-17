@@ -3,6 +3,8 @@ import { heapify, partial_heapsort } from "./heap.js";
 import { add_log_entry, get_element, CategoryInput, empty_container } from "./dom_utils.js";
 import { get_db_manager, refresh, get_category_titles, locate_category } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
+import { dijkstra, build_graph } from "./graph_utils.js";
+import layout from "./warehouse_layout.json" with { type: "json" };
 const page_size = 5;
 let storage_category_input = undefined;
 let heap_ptr = -1;
@@ -10,6 +12,20 @@ let pages = [];
 let items_heap = [];
 let current_category = undefined;
 let current_page = 0;
+let item_comparator = item_less;
+function get_item_comparator(weights) {
+    const priorities = dijkstra(build_graph(Array.from(weights.keys()), weights, layout), "start");
+    return (a, b) => {
+        if (a.status != b.status)
+            return a.status > b.status;
+        if (a.expiration_date != b.expiration_date)
+            return a.expiration_date < b.expiration_date;
+        if (!priorities.has(a.box_id) || !priorities.get(b.box_id)) {
+            return true;
+        }
+        return priorities.get(a.box_id) < priorities.get(b.box_id);
+    };
+}
 function get_category_input() {
     if (!storage_category_input)
         throw new Error("Storage category input is not initialized");
@@ -18,7 +34,7 @@ function get_category_input() {
 function next_page() {
     if (heap_ptr == -1)
         return; // reached the end of the heap
-    const { sorted, ptr } = partial_heapsort(items_heap, heap_ptr, page_size, item_less);
+    const { sorted, ptr } = partial_heapsort(items_heap, heap_ptr, page_size, item_comparator);
     pages.push(sorted);
     heap_ptr = ptr;
 }
@@ -54,7 +70,7 @@ function render_item(item) {
             await get_db_manager().update_item(item.id, { status: new_status });
             const new_status_str = renderPattern(new_status === 0 ? "status_0" : "status_1");
             add_log_entry(renderPattern("log_update_status", {
-                meta: repr(item, current_category),
+                meta: repr(item),
                 status: new_status_str
             }), "storageLog");
             await refresh();
@@ -72,7 +88,7 @@ function render_item(item) {
                 throw new Error("Item ID not defined");
             await get_db_manager().remove_item(item.id);
             add_log_entry(renderPattern("log_delete", {
-                meta: repr(item, current_category)
+                meta: repr(item)
             }), "storageLog");
             await refresh();
         }
@@ -132,11 +148,19 @@ async function load_items() {
         const items = await manager.get_items(current_category.title);
         items_heap = [...items];
         heap_ptr = items_heap.length - 1;
-        heapify(items_heap, item_less);
+        if (!item_comparator)
+            throw new Error("Item comparator is not initialized");
+        heapify(items_heap, item_comparator);
     }
     catch (error) {
         console.error("Failed to load items:", error);
     }
+}
+async function refresh_item_comparator() {
+    const manager = get_db_manager();
+    const weights = await manager.get_box_weights();
+    const weights_map = new Map(weights.map(entry => [entry.box_id, entry.total_weight]));
+    item_comparator = get_item_comparator(weights_map);
 }
 function update_selected_category(new_category) {
     current_category = new_category;
@@ -168,6 +192,7 @@ export async function refresh_item_management() {
     const category_input = get_category_input();
     category_input.categories = get_category_titles();
     update_selected_category(locate_category(current_category?.title ?? ""));
+    await refresh_item_comparator();
     await load_items();
     render_current_page();
 }

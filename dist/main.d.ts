@@ -5,11 +5,11 @@ export declare class DatabaseManager {
     private db_driver;
     constructor(db_driver: IDatabaseDriver);
     init_tables(): Promise<void>;
-    get_category_id(category: string): Promise<number>;
+    get_category_ids(...categories: string[]): Promise<Map<string, number>>;
     add_categories(...categories: Category[]): Promise<void>;
     remove_category(title: string): Promise<void>;
     get_categories(): Promise<Category[]>;
-    add_items(category: string, ...item: Item[]): Promise<void>;
+    add_items(...item: Item[]): Promise<void>;
     remove_item(id: number): Promise<void>;
     update_item(id: number, args: Partial<Item>): Promise<void>;
     get_items(category: string): Promise<Item[]>;
@@ -18,10 +18,7 @@ export declare class DatabaseManager {
         box_id: number;
         total_weight: number;
     }[]>;
-    get_box_content(box_id: number): Promise<{
-        item: Item;
-        category: string;
-    }[]>;
+    get_box_content(box_id: number): Promise<Item[]>;
     get_snapshot(threshold: number): Promise<{
         category: string;
         count: number;

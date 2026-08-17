@@ -26,20 +26,21 @@ export class DatabaseManager {
         );
     }
 
-    public async get_category_id(category: string): Promise<number> {
-        const category_id = await this.db_driver.query(
-            `SELECT id 
+    public async get_category_ids(...categories: string[]): Promise<Map<string, number>> {
+        categories = Array.from(new Set(categories));
+
+        if (categories.length === 0) return new Map<string, number>();
+
+        const where_clause = categories.map(() => "?").join(", ");
+        const category_ids = await this.db_driver.query<{key: string, value: number}>(
+            `SELECT title, id 
             FROM categories 
-            WHERE title = :category;`,
-            (obj: any) => obj.id,
-            { ":category": category }
+            WHERE title IN (${where_clause});`,
+            (obj: any) => { return {key: obj.title, value: obj.id};},
+            categories       
         );
 
-        if (category_id.length === 0) {
-            throw new Error(`Category "${category}" does not exist.`);
-        }
-
-        return category_id[0];
+        return new Map(category_ids.map(({key, value}) => [key, value]));
     }
 
     public async add_categories(...categories: Category[]): Promise<void> {
@@ -73,14 +74,15 @@ export class DatabaseManager {
 
     public async add_items(...item: Item[]): Promise<void> {
         if (item.length === 0) return;
-        const category_map = new Map<string, number>();
+
+        const category_map = await this.get_category_ids(...item.map(i => i.category));
         for (const i of item) {
             if (!category_map.has(i.category)) {
-                const category_id = await this.get_category_id(i.category);
-                category_map.set(i.category, category_id);
+                throw new Error(`Category "${i.category}" does not exist.`);
             }
         }
-        const flattened_values = item.flatMap(i => [category_map.get(i.category)!, i.box_id, i.expiration_date, i.status, Date.now()]);
+
+        const flattened_values = item.flatMap(i => [category_map.get(i.category), i.box_id, i.expiration_date, i.status, Date.now()]);
         const clause = item.map(() => "(?, ?, ?, ?, ?)").join(", ");
         await this.db_driver.run(
             `INSERT INTO items 
@@ -102,8 +104,14 @@ export class DatabaseManager {
     public async update_item(id: number, args: Partial<Item>): Promise<void> {
         const { category, ...rest } = args;
         const update_obj: Record<string, any> = { ...rest };
+
         if (category !== undefined) {
-            update_obj.category_id = await this.get_category_id(category);
+            const category_map = await this.get_category_ids(category);
+            const category_id = category_map.get(category);
+            if (category_id === undefined) {
+                throw new Error(`Category "${category}" does not exist.`);
+            }
+            update_obj["category_id"] = category_id;
         }
 
         const entries = Object.entries(update_obj).filter(
@@ -150,6 +158,7 @@ export class DatabaseManager {
             `SELECT I.box_id as box_id, SUM(COALESCE(C.weight, 0)) AS total_weight
             FROM items AS I
             JOIN categories AS C ON I.category_id = C.id
+            WHERE I.remove_date IS NULL
             GROUP BY I.box_id`,
             (obj: any) => { return { box_id: obj.box_id as number, total_weight: obj.total_weight as number };}
         );

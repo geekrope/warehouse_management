@@ -4,6 +4,8 @@ import { heapify, partial_heapsort } from "./heap.js";
 import { add_log_entry, get_element, CategoryInput, empty_container } from "./dom_utils.js";
 import { get_db_manager, refresh, get_category_titles, locate_category } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
+import { dijkstra, build_graph } from "./graph_utils.js";
+import layout from "./warehouse_layout.json" with { type: "json" };
 
 const page_size: number = 5;
 
@@ -13,6 +15,22 @@ let pages: Item[][] = [];
 let items_heap: Item[] = [];
 let current_category: Category | undefined = undefined;
 let current_page: number = 0;
+let item_comparator: ((a: Item, b: Item) => boolean) = item_less;
+
+function get_item_comparator(weights: Map<number, number>): (a: Item, b: Item) => boolean {
+    const priorities = dijkstra(build_graph(Array.from(weights.keys()), weights, layout), "start");
+
+    return (a: Item, b: Item): boolean => {
+        if (a.status != b.status) return a.status > b.status;
+        if (a.expiration_date != b.expiration_date) return a.expiration_date < b.expiration_date;
+        
+        if(!priorities.has(a.box_id) || !priorities.get(b.box_id)) {
+            return true;
+        }
+
+        return priorities.get(a.box_id)! < priorities.get(b.box_id)!;
+    }
+}
 
 function get_category_input(): CategoryInput {
     if (!storage_category_input) throw new Error("Storage category input is not initialized");
@@ -22,7 +40,7 @@ function get_category_input(): CategoryInput {
 function next_page() {
     if (heap_ptr == -1) return; // reached the end of the heap
 
-    const { sorted, ptr } = partial_heapsort(items_heap, heap_ptr, page_size, item_less);
+    const { sorted, ptr } = partial_heapsort(items_heap, heap_ptr, page_size, item_comparator);
     pages.push(sorted);
     heap_ptr = ptr;
 }
@@ -160,10 +178,19 @@ async function load_items() {
         const items = await manager.get_items(current_category.title);
         items_heap = [...items];
         heap_ptr = items_heap.length - 1;
-        heapify(items_heap, item_less);
+
+        if(!item_comparator) throw new Error("Item comparator is not initialized");
+        heapify(items_heap, item_comparator);
     } catch (error) {
         console.error("Failed to load items:", error);
     }
+}
+
+async function refresh_item_comparator() {
+    const manager = get_db_manager();
+    const weights = await manager.get_box_weights();
+    const weights_map = new Map<number, number>(weights.map(entry => [entry.box_id, entry.total_weight]));
+    item_comparator = get_item_comparator(weights_map);
 }
 
 function update_selected_category(new_category: Category | undefined) {
@@ -208,6 +235,7 @@ export async function refresh_item_management() {
     category_input.categories = get_category_titles();
 
     update_selected_category(locate_category(current_category?.title ?? ""));
-    await load_items();
+    await refresh_item_comparator();
+    await load_items();    
     render_current_page();
 }

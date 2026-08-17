@@ -40,21 +40,23 @@ export const HeapTests = {
     },
 
     random_item: () => new Item(
+        "Default",
         Math.floor(Math.random() * 1000),
         Math.floor(Math.random() * 50),
         Math.floor(Math.random() * 3)
     ),
 
-    equal: (a: Item, b: Item) => a.expiration_date == b.expiration_date &&
+    equal: (a: Item, b: Item) => a.category == b.category &&
+        a.expiration_date == b.expiration_date &&
         a.box_id == b.box_id &&
         a.status == b.status,
 
     // --- 1. HEAPIFY ---
     testHeapify(assert: AssertFunc) {
         const arr = [
-            new Item(10, 1, 0),
-            new Item(5, 1, 1),
-            new Item(1, 1, 0),
+            new Item("Default", 10, 1, 0),
+            new Item("Default", 5, 1, 1),
+            new Item("Default", 1, 1, 0),
         ];
 
         heapify(arr, item_less);
@@ -67,9 +69,9 @@ export const HeapTests = {
     testInsert(assert: AssertFunc) {
         const heap: Array<Item> = [];
 
-        insert(heap, new Item(10, 1, 0), item_less);
-        insert(heap, new Item(5, 1, 0), item_less);
-        insert(heap, new Item(20, 1, 1), item_less);
+        insert(heap, new Item("Default", 10, 1, 0), item_less);
+        insert(heap, new Item("Default", 5, 1, 0), item_less);
+        insert(heap, new Item("Default", 20, 1, 1), item_less);
 
         assert(this.isValid(heap), "Insert maintains heap property");
         assert(heap[0].status === 1, "Insert bubbles high-priority item to top");
@@ -78,10 +80,10 @@ export const HeapTests = {
     // --- 3. ERASE ---
     testErase(assert: AssertFunc) {
         const heap = [
-            new Item(10, 1, 0),
-            new Item(5, 1, 1),
-            new Item(20, 1, 0),
-            new Item(1, 1, 1),
+            new Item("Default", 10, 1, 0),
+            new Item("Default", 5, 1, 1),
+            new Item("Default", 20, 1, 0),
+            new Item("Default", 1, 1, 1),
         ];
 
         heapify(heap, item_less);
@@ -93,26 +95,26 @@ export const HeapTests = {
         erase(heap, last_idx, item_less);
         assert(this.isValid(heap), "Erase leaf keeps heap valid");
 
-        const h2 = [10, 20, 30, 40, 50].map(v => new Item(v, 0, 0));
-        h2[4] = new Item(1, 0, 2);
+        const h2 = [10, 20, 30, 40, 50].map(v => new Item("Default", v, 0, 0));
+        h2[4] = new Item("Default", 1, 0, 2);
         erase(h2, 1, item_less);
         assert(h2[0].status === 2, "Erase correctly triggers sift-up");
     },
 
     // --- 4. COMPARATOR ---
     testComparator(assert: AssertFunc) {
-        const ok = new Item(10, 1, 0);
-        const damaged = new Item(10, 1, 1);
+        const ok = new Item("Default", 10, 1, 0);
+        const damaged = new Item("Default", 10, 1, 1);
 
         assert(item_less(damaged, ok), "Damaged beats ideal");
 
-        const early = new Item(5, 1, 0);
-        const late = new Item(10, 1, 0);
+        const early = new Item("Default", 5, 1, 0);
+        const late = new Item("Default", 10, 1, 0);
 
         assert(item_less(early, late), "Earlier expiration wins");
 
-        const big_box = new Item(10, 10, 0);
-        const small_box = new Item(10, 1, 0);
+        const big_box = new Item("Default", 10, 10, 0);
+        const small_box = new Item("Default", 10, 1, 0);
 
         assert(item_less(big_box, small_box), "Bigger box wins tie");
     },
@@ -150,10 +152,10 @@ export const HeapTests = {
         assert(ok, "Partial heapsort produces priority-ordered sequence");
 
         const arr2 = [
-            new Item(5, 1, 0),
-            new Item(1, 1, 2),
-            new Item(10, 1, 0),
-            new Item(2, 1, 1),
+            new Item("Default", 5, 1, 0),
+            new Item("Default", 1, 1, 2),
+            new Item("Default", 10, 1, 0),
+            new Item("Default", 2, 1, 1),
         ];
         heapify(arr2, item_less);
 
@@ -196,6 +198,7 @@ export const HeapTests = {
         // 1. Generate chaotic data
         for (let i = 0; i < size; i++) {
             raw_data.push(new Item(
+                "Default",
                 Math.floor(Math.random() * 1000), // expiration days
                 Math.floor(Math.random() * 10),   // box number
                 Math.floor(Math.random() * 3)    // status
@@ -243,8 +246,8 @@ export const HeapTests = {
     testPriorityInvariant: (assert: AssertFunc) => {
         const heap: Array<Item> = [];
 
-        insert(heap, new Item(100, 1, 1), item_less);
-        insert(heap, new Item(999, 1, 2), item_less);
+        insert(heap, new Item("Default", 100, 1, 1), item_less);
+        insert(heap, new Item("Default", 999, 1, 2), item_less);
 
         assert(heap[0].status === 2, "Critical always outranks damaged regardless of date");
     },
@@ -307,9 +310,9 @@ export const DatabaseTests = {
         try {
             await manager.add_categories({title: "Tuna", weight: 200}, {title: "Tushonka", weight: 200});
             const categories = await manager.get_categories();
-            assert(categories.length === 3, `Expected 3 categories, got ${categories.length}`);
-            assert(categories.includes({title: "Tuna", weight: 200}), "Tuna category not found");
-            assert(categories.includes({title: "Tushonka", weight:200}), "Tushonka category not found");
+            assert(categories.length === 2, `Expected 2 categories, got ${categories.length}`);
+            assert(categories.some(cat => cat.title == "Tuna"), "Tuna category not found");
+            assert(categories.some(cat => cat.title == "Tushonka"), "Tushonka category not found");
         } catch (e) {
             assert(false, `Add categories failed: ${e}`);
         }
@@ -322,8 +325,8 @@ export const DatabaseTests = {
         await manager.add_categories({title: "TestCat", weight: 200});
         
         try {
-            await manager.add_items("TestCat", new Item(Date.now() + 1000000, 1, 0));
-            await manager.add_items("TestCat", new Item(Date.now() + 2000000, 2, 1));
+            await manager.add_items(new Item("TestCat", Date.now() + 1000000, 1, 0));
+            await manager.add_items(new Item("TestCat", Date.now() + 2000000, 2, 1));
             const items = await manager.get_items("TestCat");
             assert(items.length === 2, `Expected 2 items, got ${items.length}`);
         } catch (e) {
@@ -336,8 +339,8 @@ export const DatabaseTests = {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
         await manager.add_categories({title: "Food", weight: 200});
-        await manager.add_items("Food", new Item(Date.now() + 1000000, 1, 0));
-        await manager.add_items("Food", new Item(Date.now() + 2000000, 2, 0));
+        await manager.add_items(new Item("Food", Date.now() + 1000000, 1, 0));
+        await manager.add_items(new Item("Food", Date.now() + 2000000, 2, 0));
         
         try {
             const items = await manager.get_items("Food");
@@ -353,8 +356,8 @@ export const DatabaseTests = {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
         await manager.add_categories({title: "Stuff", weight: 200});
-        await manager.add_items("Stuff", new Item(Date.now() + 1000000, 1));
-        await manager.add_items("Stuff", new Item(Date.now() + 2000000, 2));
+        await manager.add_items(new Item("Stuff", Date.now() + 1000000, 1));
+        await manager.add_items(new Item("Stuff", Date.now() + 2000000, 2));
         
         try {
             let items = await manager.get_items("Stuff");
@@ -374,7 +377,7 @@ export const DatabaseTests = {
         const manager = await DatabaseTests.createTestDatabase();
         await manager.init_tables();
         await manager.add_categories({title: "Boxes", weight: 200});
-        await manager.add_items("Boxes", new Item(Date.now() + 1000000, 1, 0));
+        await manager.add_items(new Item("Boxes", Date.now() + 1000000, 1, 0));
         
         try {
             await manager.update_item(1, { status: 1 });
@@ -398,7 +401,8 @@ export const DatabaseTests = {
             
             // Add many items
             for (let i = 0; i < 50; i++) {
-                await manager.add_items("Stress", new Item(
+                await manager.add_items(new Item(
+                    "Stress",
                     Date.now() + Math.random() * 1000000,
                     Math.floor(Math.random() * 10),
                     Math.floor(Math.random() * 2)
