@@ -215,18 +215,18 @@ export function create_draggable_item_element(item) {
     card.draggable = true;
     const info = document.createElement("div");
     info.className = "item-info";
-    const date = document.createElement("div");
-    date.className = "item-date";
+    const caption = document.createElement("div");
+    caption.className = "item-caption";
     const date_str = new Date(item.expiration_date).toLocaleDateString();
     const status_str = renderPattern(item.status === 0 ? "status_0" : "status_1");
-    date.textContent = renderPattern("list_item_label", {
+    caption.textContent = renderPattern("list_item_label", {
         date: date_str,
         status: status_str
     });
     const meta = document.createElement("div");
     meta.className = "item-meta";
     meta.textContent = item.category;
-    info.appendChild(date);
+    info.appendChild(caption);
     info.appendChild(meta);
     card.appendChild(info);
     card.addEventListener("dragstart", (e) => {

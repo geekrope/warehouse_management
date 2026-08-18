@@ -20,7 +20,7 @@ function get_item_comparator(weights) {
             return a.status > b.status;
         if (a.expiration_date != b.expiration_date)
             return a.expiration_date < b.expiration_date;
-        if (!priorities.has(a.box_id) || !priorities.get(b.box_id)) {
+        if (!priorities.has(a.box_id) || !priorities.has(b.box_id)) {
             return true;
         }
         return priorities.get(a.box_id) < priorities.get(b.box_id);
@@ -43,18 +43,18 @@ function render_item(item) {
     itemCard.className = "item-card";
     const itemInfo = document.createElement("div");
     itemInfo.className = "item-info";
-    const itemDate = document.createElement("div");
-    itemDate.className = "item-date";
+    const itemCaption = document.createElement("div");
+    itemCaption.className = "item-caption";
     const date_str = new Date(item.expiration_date).toLocaleDateString();
     const status_str = renderPattern(item.status === 0 ? "status_0" : "status_1");
-    itemDate.textContent = renderPattern("list_item_label", {
+    itemCaption.textContent = renderPattern("list_item_label", {
         date: date_str,
         status: status_str
     });
     const itemMeta = document.createElement("div");
     itemMeta.className = "item-meta";
     itemMeta.textContent = `${renderPattern("box")} ${item.box_id}`;
-    itemInfo.appendChild(itemDate);
+    itemInfo.appendChild(itemCaption);
     itemInfo.appendChild(itemMeta);
     const btnGroup = document.createElement("div");
     btnGroup.className = "button-group";

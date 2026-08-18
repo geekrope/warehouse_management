@@ -74,7 +74,14 @@ export function refresh_category_management() {
 
         const info = document.createElement("div");
         info.className = "item-info";
-        info.textContent = repr(cat);
+
+        const name = document.createElement("div");
+        name.className = "item-caption";
+        name.textContent = cat.title;
+
+        const weight = document.createElement("div");
+        weight.className = "item-meta";
+        weight.textContent = renderPattern("weight", { weight: cat.weight !== null ? cat.weight.toString() : "N/A" });
 
         const btnGroup = document.createElement("div");
         btnGroup.className = "button-group";
@@ -96,6 +103,8 @@ export function refresh_category_management() {
         });
 
         btnGroup.appendChild(deleteBtn);
+        info.appendChild(name);
+        info.appendChild(weight);
         card.appendChild(info);
         card.appendChild(btnGroup);
         categoriesList.appendChild(card);

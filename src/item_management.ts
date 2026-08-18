@@ -24,7 +24,7 @@ function get_item_comparator(weights: Map<number, number>): (a: Item, b: Item) =
         if (a.status != b.status) return a.status > b.status;
         if (a.expiration_date != b.expiration_date) return a.expiration_date < b.expiration_date;
         
-        if(!priorities.has(a.box_id) || !priorities.get(b.box_id)) {
+        if(!priorities.has(a.box_id) || !priorities.has(b.box_id)) {
             return true;
         }
 
@@ -52,11 +52,11 @@ function render_item(item: Item): HTMLElement {
     const itemInfo = document.createElement("div");
     itemInfo.className = "item-info";
 
-    const itemDate = document.createElement("div");
-    itemDate.className = "item-date";
+    const itemCaption = document.createElement("div");
+    itemCaption.className = "item-caption";
     const date_str = new Date(item.expiration_date).toLocaleDateString();
     const status_str = renderPattern(item.status === 0 ? "status_0" : "status_1");
-    itemDate.textContent = renderPattern("list_item_label", {
+    itemCaption.textContent = renderPattern("list_item_label", {
         date: date_str,
         status: status_str
     });
@@ -65,7 +65,7 @@ function render_item(item: Item): HTMLElement {
     itemMeta.className = "item-meta";
     itemMeta.textContent = `${renderPattern("box")} ${item.box_id}`;
 
-    itemInfo.appendChild(itemDate);
+    itemInfo.appendChild(itemCaption);
     itemInfo.appendChild(itemMeta);
 
     const btnGroup = document.createElement("div");

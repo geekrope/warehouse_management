@@ -81,8 +81,8 @@ export async function main(): Promise<void> {
         add_log_entry(renderPattern("initial_log"), "categoriesLog");
         add_log_entry(renderPattern("initial_log"), "backupLog");
 
-        console.log(db.exec("SELECT * FROM Items;"));
-        console.log(await db_manager.get_category_ids("1", "парашка", "тушенка", "тушенка", "1"));
+        console.log(db.exec("SELECT * FROM items;"));
+        console.log(db.exec("SELECT * FROM categories;"));
     } catch (error) {
         console.error("Failed to initialize database:", error);
         add_log_entry(renderPattern("initial_log_fail"), "intakeLog", true);
