@@ -13,11 +13,11 @@ async function add_category() {
     const category_weight = values["weight"];
     const category: Category = {
         title: category_name,
-        weight: category_weight as number | undefined
+        weight: (typeof category_weight == "number" && !isNaN(category_weight)) ? Number(category_weight) : null
     };
 
     try {
-        if (!category) throw new Error("Category cannot be empty");
+        if (category.title == "") throw new Error("Category cannot be empty");
         if (get_categories_list().some(c => c.title === category.title)) throw new Error("Category already exists");
 
         await manager.add_categories(category);
@@ -47,7 +47,8 @@ export function init_category_management() {
                 label: renderPattern("category_weight_label"),
                 type: "number",
                 step: 0.01,
-                min: 0
+                min: 0,
+                required: false
             }
         ],
         renderPattern("add_category_btn"),

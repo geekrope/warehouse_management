@@ -97,7 +97,7 @@ const LOCALES = {
         label_status: "STATUS",
         selected_category: "SELECTED CATEGORY: {category}",
         no_category_selected: "CATEGORY NOT SELECTED",
-        category_repr: "CATEGORY {title} WEIGHT {weight} g",
+        category_repr: "NAME: {title} WEIGHT: {weight} g",
         category_title_label: "CATEGORY",
         category_weight_label: "WEIGHT",
         weight: "WEIGHT {weight} g",
@@ -164,7 +164,7 @@ const LOCALES = {
         label_status: "КАКОЕ СОСТОЯНIЕ",
         selected_category: "ВЫБРАННЫЙ РОД: {category}",
         no_category_selected: "РОДЪ НЕ ВЫБРАНЪ",
-        category_repr: "РОДЪ {title} ВЕС {weight} г",
+        category_repr: "РОДЪ: {title} ВЕС: {weight} г",
         category_title_label: "РОДЪ",
         category_weight_label: "ВЕС",
         weight: "ВЕС {weight} г",
@@ -231,7 +231,7 @@ const LOCALES = {
         label_status: "СТАТУС",
         selected_category: "ВЫБРАННАЯ КАТЕГОРИЯ: {category}",
         no_category_selected: "КАТЕГОРИЯ НЕ ВЫБРАНА",
-        category_repr: "КАТЕГОРИЯ {title} ВЕС {weight} г",
+        category_repr: "НАЗВАНИЕ: {title} ВЕС: {weight} г",
         category_title_label: "КАТЕГОРИЯ",
         category_weight_label: "ВЕС",
         weight: "ВЕС {weight} г",
@@ -319,7 +319,7 @@ export function repr(item: Item | Category): string {
     else {
         return renderPattern("category_repr", {
             title: item.title,
-            weight: item.weight !== undefined ? item.weight.toString() : "N/A"
+            weight: item.weight !== null ? item.weight.toString() : "N/A"
         });
     }
 }

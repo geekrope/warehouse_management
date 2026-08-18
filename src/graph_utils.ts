@@ -26,6 +26,32 @@ export function dijkstra<T>(graph: Map<T, Map<T, number>>, start: T): Map<T, num
     return distances;
 }
 
+export function detect_cycle<T>(graph: Map<T, Map<T, number>>, labels: Map<T, number>, start: T): boolean {
+    labels.set(start, 1);
+
+    const neighbors = graph.get(start);
+    if (!neighbors) throw new Error(`Vertex ${start} not found in graph`);
+
+    for (const neighbor of neighbors.keys()) {
+        const label = labels.get(neighbor);
+
+        if (label === undefined) throw new Error(`Vertex ${neighbor} not found in labels`);
+
+        switch (label) {
+            case 0:
+                if (detect_cycle(graph, labels, neighbor)) return true;
+                break;
+            case 1:
+                return true;
+            case 2:
+                continue;
+        }
+    }
+
+    labels.set(start, 2);
+    return false;
+}
+
 export type AdjacencyList = Record<string, number>;
 
 type Vertex = number | "start";

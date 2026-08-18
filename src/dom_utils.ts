@@ -21,11 +21,28 @@ export function empty_container(): HTMLDivElement {
     const emptyContainer = document.createElement("div");
     emptyContainer.className = "empty-state";
 
-    const emptyImage = document.createElement("img");
-    emptyImage.src = "./empty_list.svg";
-    emptyImage.className = "empty-state-img";
+    /*emptyContainer.innerHTML = 
+    `<model-viewer 
+        src="tin_model.glb"
+        environment-image="neutral"
+        exposure="1.2"
+        light-intensity="3"
+        shadow-intensity="0.2" 
+        camera-controls 
+        rotation-per-second="60deg" 
+        orientation="0deg -60deg 0deg" 
+        auto-rotate 
+        style="width:300px; height:300px;">
+    </model-viewer>`;*/
 
-    emptyContainer.appendChild(emptyImage);
+    const img = document.createElement("img");
+    img.classList = "empty-state-img";
+    img.src = "empty_list.svg";
+    img.style.width = "300px";
+    img.style.height = "300px";
+
+    emptyContainer.appendChild(img);
+    
     return emptyContainer;
 }
 
@@ -258,7 +275,7 @@ export class DynamicForm {
 
         if (field.step !== undefined) input.step = String(field.step);
         if (field.min !== undefined) input.min = String(field.min);
-        if (field.max !== undefined) input.max = String(field.max);        
+        if (field.max !== undefined) input.max = String(field.max);
 
         return input;
     }

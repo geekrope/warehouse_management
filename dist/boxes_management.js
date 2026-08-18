@@ -150,9 +150,7 @@ export function render_box_graph(container, boxes, weights, adjacency = box_adja
         layout: {
             hierarchical: {
                 direction: "UD",
-                sortMethod: "directed",
-                //nodeSpacing: 160,
-                //levelSeparation: 90
+                sortMethod: "directed"
             }
         },
         physics: {

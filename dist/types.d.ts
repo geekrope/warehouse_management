@@ -11,6 +11,6 @@ export declare class Item {
 export declare function item_less(a: Item, b: Item): boolean;
 export type Category = {
     title: string;
-    weight: number | undefined;
+    weight: number | null;
 };
 //# sourceMappingURL=types.d.ts.map

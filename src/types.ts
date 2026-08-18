@@ -36,5 +36,5 @@ export function item_less(a: Item, b: Item): boolean {
 
 export type Category = {
     title: string;
-    weight: number | undefined;
+    weight: number | null;
 };

@@ -188,9 +188,7 @@ export function render_box_graph(
         layout: {
             hierarchical: {
                 direction: "UD",
-                sortMethod: "directed",
-                //nodeSpacing: 160,
-                //levelSeparation: 90
+                sortMethod: "directed"
             }
         },
         physics: {

@@ -5,13 +5,16 @@ import type { Category } from "./types.js";
 export class DatabaseManager {
     constructor(private db_driver: IDatabaseDriver) { }
 
-    //TODO: add category metadata  
     public async init_tables(): Promise<void> {
         await this.db_driver.run(
             `CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL UNIQUE,
             weight REAL DEFAULT NULL);`
+        );
+        await this.db_driver.run(
+            `CREATE TABLE IF NOT EXISTS boxes (
+            id INTEGER PRIMARY KEY)`
         );
         await this.db_driver.run(
             `CREATE TABLE IF NOT EXISTS items (
@@ -22,7 +25,26 @@ export class DatabaseManager {
             status INTEGER NOT NULL,
             add_date INTEGER NOT NULL,
             remove_date INTEGER DEFAULT NULL,
+            FOREIGN KEY (box_id) REFERENCES boxes(id),
             FOREIGN KEY (category_id) REFERENCES categories(id));`
+        );
+        await this.db_driver.run(
+            `CREATE TRIGGER IF NOT EXISTS box_emplace_insert
+            BEFORE INSERT ON items
+            FOR EACH ROW
+            WHEN (SELECT COUNT(*) FROM boxes WHERE id = NEW.box_id) = 0
+            BEGIN
+                INSERT INTO boxes (id) VALUES (NEW.box_id);
+            END;`
+        );
+        await this.db_driver.run(
+            `CREATE TRIGGER IF NOT EXISTS box_emplace_update
+            BEFORE UPDATE ON items
+            FOR EACH ROW
+            WHEN (SELECT COUNT(*) FROM boxes WHERE id = NEW.box_id) = 0
+            BEGIN
+                INSERT INTO boxes (id) VALUES (NEW.box_id);
+            END;`
         );
     }
 
@@ -68,7 +90,7 @@ export class DatabaseManager {
             `SELECT title, weight 
             FROM categories 
             ORDER BY title ASC;`,
-            (obj: any) => { return {title: obj.title as string, weight: obj.weight as number | undefined} }
+            (obj: any) => { return {title: obj.title as string, weight: obj.weight as number | null} }
         );
     }
 
@@ -145,9 +167,8 @@ export class DatabaseManager {
 
     public async get_boxes(): Promise<number[]> {
         return await this.db_driver.query<number>(
-            `SELECT DISTINCT box_id
-            FROM items
-            WHERE remove_date IS NULL
+            `SELECT id AS box_id
+            FROM boxes
             ORDER BY box_id ASC;`,
             (obj: any) => obj.box_id as number,
         );

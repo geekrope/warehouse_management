@@ -4,12 +4,13 @@ export class DatabaseManager {
     constructor(db_driver) {
         this.db_driver = db_driver;
     }
-    //TODO: add category metadata  
     async init_tables() {
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL UNIQUE,
             weight REAL DEFAULT NULL);`);
+        await this.db_driver.run(`CREATE TABLE IF NOT EXISTS boxes (
+            id INTEGER PRIMARY KEY)`);
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             category_id INTEGER NOT NULL,
@@ -18,7 +19,22 @@ export class DatabaseManager {
             status INTEGER NOT NULL,
             add_date INTEGER NOT NULL,
             remove_date INTEGER DEFAULT NULL,
+            FOREIGN KEY (box_id) REFERENCES boxes(id),
             FOREIGN KEY (category_id) REFERENCES categories(id));`);
+        await this.db_driver.run(`CREATE TRIGGER IF NOT EXISTS box_emplace_insert
+            BEFORE INSERT ON items
+            FOR EACH ROW
+            WHEN (SELECT COUNT(*) FROM boxes WHERE id = NEW.box_id) = 0
+            BEGIN
+                INSERT INTO boxes (id) VALUES (NEW.box_id);
+            END;`);
+        await this.db_driver.run(`CREATE TRIGGER IF NOT EXISTS box_emplace_update
+            BEFORE UPDATE ON items
+            FOR EACH ROW
+            WHEN (SELECT COUNT(*) FROM boxes WHERE id = NEW.box_id) = 0
+            BEGIN
+                INSERT INTO boxes (id) VALUES (NEW.box_id);
+            END;`);
     }
     async get_category_ids(...categories) {
         categories = Array.from(new Set(categories));
@@ -95,9 +111,8 @@ export class DatabaseManager {
             AND remove_date IS NULL;`, Item.from, { ":category": category });
     }
     async get_boxes() {
-        return await this.db_driver.query(`SELECT DISTINCT box_id
-            FROM items
-            WHERE remove_date IS NULL
+        return await this.db_driver.query(`SELECT id AS box_id
+            FROM boxes
             ORDER BY box_id ASC;`, (obj) => obj.box_id);
     }
     async get_box_weights() {

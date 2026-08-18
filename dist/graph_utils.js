@@ -23,6 +23,29 @@ export function dijkstra(graph, start) {
     }
     return distances;
 }
+export function detect_cycle(graph, labels, start) {
+    labels.set(start, 1);
+    const neighbors = graph.get(start);
+    if (!neighbors)
+        throw new Error(`Vertex ${start} not found in graph`);
+    for (const neighbor of neighbors.keys()) {
+        const label = labels.get(neighbor);
+        if (label === undefined)
+            throw new Error(`Vertex ${neighbor} not found in labels`);
+        switch (label) {
+            case 0:
+                if (detect_cycle(graph, labels, neighbor))
+                    return true;
+                break;
+            case 1:
+                return true;
+            case 2:
+                continue;
+        }
+    }
+    labels.set(start, 2);
+    return false;
+}
 export function build_graph(boxes, weights, adjacency_list) {
     const start_node = "start";
     const graph = new Map();

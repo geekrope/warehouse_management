@@ -61,7 +61,7 @@ export async function main() {
         add_log_entry(renderPattern("initial_log"), "categoriesLog");
         add_log_entry(renderPattern("initial_log"), "backupLog");
         console.log(db.exec("SELECT * FROM Items;"));
-        console.log(await db_manager.get_category_ids("1", "тушенка", "тушенка", "тушенка", "1"));
+        console.log(await db_manager.get_category_ids("1", "парашка", "тушенка", "тушенка", "1"));
     }
     catch (error) {
         console.error("Failed to initialize database:", error);
