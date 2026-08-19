@@ -1,6 +1,7 @@
 import type { IDatabaseDriver } from "./db_driver.js";
 import { Item } from "./types.js";
-import type { Category } from "./types.js";
+import { type Category } from "./types.js";
+import { type AdjacencyList } from "./graph_utils.js";
 
 export class DatabaseManager {
     constructor(private db_driver: IDatabaseDriver) { }
@@ -29,6 +30,13 @@ export class DatabaseManager {
             FOREIGN KEY (category_id) REFERENCES categories(id));`
         );
         await this.db_driver.run(
+            `CREATE TABLE IF NOT EXISTS box_adjacency (
+            v INTEGER NOT NULL,
+            u INTEGER NOT NULL,
+            FOREIGN KEY (v) REFERENCES boxes(id),
+            FOREIGN KEY (u) REFERENCES boxes(id))`
+        );
+        await this.db_driver.run(
             `CREATE TRIGGER IF NOT EXISTS box_emplace_insert
             BEFORE INSERT ON items
             FOR EACH ROW
@@ -54,15 +62,15 @@ export class DatabaseManager {
         if (categories.length === 0) return new Map<string, number>();
 
         const where_clause = categories.map(() => "?").join(", ");
-        const category_ids = await this.db_driver.query<{key: string, value: number}>(
+        const category_ids = await this.db_driver.query<{ key: string, value: number }>(
             `SELECT title, id 
             FROM categories 
             WHERE title IN (${where_clause});`,
-            (obj: any) => { return {key: obj.title, value: obj.id};},
-            categories       
+            (obj: any) => { return { key: obj.title, value: obj.id }; },
+            categories
         );
 
-        return new Map(category_ids.map(({key, value}) => [key, value]));
+        return new Map(category_ids.map(({ key, value }) => [key, value]));
     }
 
     public async add_categories(...categories: Category[]): Promise<void> {
@@ -90,7 +98,7 @@ export class DatabaseManager {
             `SELECT title, weight 
             FROM categories 
             ORDER BY title ASC;`,
-            (obj: any) => { return {title: obj.title as string, weight: obj.weight as number | null} }
+            (obj: any) => { return { title: obj.title as string, weight: obj.weight as number | null } }
         );
     }
 
@@ -142,8 +150,8 @@ export class DatabaseManager {
 
         if (entries.length === 0) return;
 
-        const keys = entries.map(([key, _]) => key);        
-        const values = entries.map(([_, value]) => value);  
+        const keys = entries.map(([key, _]) => key);
+        const values = entries.map(([_, value]) => value);
         const set_clause = keys.map(key => `${key} = ?`).join(", ");
 
         await this.db_driver.run(
@@ -174,14 +182,14 @@ export class DatabaseManager {
         );
     }
 
-    public async get_box_weights(): Promise<{box_id: number, total_weight: number}[]> {
-        return await this.db_driver.query<{box_id: number, total_weight: number}>(
+    public async get_box_weights(): Promise<{ box_id: number, total_weight: number }[]> {
+        return await this.db_driver.query<{ box_id: number, total_weight: number }>(
             `SELECT I.box_id as box_id, SUM(COALESCE(C.weight, 0)) AS total_weight
             FROM items AS I
             JOIN categories AS C ON I.category_id = C.id
             WHERE I.remove_date IS NULL
             GROUP BY I.box_id`,
-            (obj: any) => { return { box_id: obj.box_id as number, total_weight: obj.total_weight as number };}
+            (obj: any) => { return { box_id: obj.box_id as number, total_weight: obj.total_weight as number }; }
         );
     }
 
@@ -193,19 +201,50 @@ export class DatabaseManager {
             WHERE I.box_id = :box_id AND I.remove_date IS NULL
             ORDER BY C.title;`,
             Item.from,
-            {":box_id": box_id }
+            { ":box_id": box_id }
         );
     }
 
-    public async get_snapshot(threshold: number): Promise<{category: string, count: number}[]> {
-        return await this.db_driver.query<{category: string, count: number}>(
+    public async get_box_adjacency(): Promise<AdjacencyList> {
+        const edges = await this.db_driver.query<{ v: number, u: number }>(
+            `SELECT v, u
+            FROM box_adjacency;`,
+            (obj: any) => { return { v: obj.v as number, u: obj.u as number }; }
+        );
+
+        return edges;
+    }
+
+    public async add_box_connections(adjacency: AdjacencyList): Promise<void> {
+        if (adjacency.length === 0) return;
+
+        const values_clause = adjacency.map(() => "(?, ?)").join(", ");
+        const values = adjacency.flatMap(({ v, u }) => [v, u]);
+
+        await this.db_driver.run(
+            `INSERT INTO box_adjacency 
+            (v, u) 
+            VALUES ${values_clause};`,
+            values
+        );
+    }
+
+    public async remove_box_connection(v: number, u: number): Promise<void> {
+        await this.db_driver.run(
+            `DELETE FROM box_adjacency WHERE v = :v AND u = :u;`,
+            { ":v": v, ":u": u }
+        );
+    }
+
+    public async get_snapshot(threshold: number): Promise<{ category: string, count: number }[]> {
+        return await this.db_driver.query<{ category: string, count: number }>(
             `SELECT C.title as title, COUNT(*) AS count
             FROM items AS I
             JOIN categories AS C ON I.category_id = C.id
             WHERE I.add_date <= :threshold AND (I.remove_date IS NULL OR I.remove_date > :threshold)
             GROUP BY C.title;`,
             (obj: any) => ({ category: obj.title as string, count: obj.count as number }),
-            {":threshold": threshold }
+            { ":threshold": threshold }
         );
     }
 }

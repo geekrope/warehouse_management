@@ -4,7 +4,6 @@ import { add_log_entry, get_element, CategoryInput, empty_container } from "./do
 import { get_db_manager, refresh, get_category_titles, locate_category } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { dijkstra, build_graph } from "./graph_utils.js";
-import layout from "./warehouse_layout.json" with { type: "json" };
 const page_size = 5;
 let storage_category_input = undefined;
 let heap_ptr = -1;
@@ -13,8 +12,8 @@ let items_heap = [];
 let current_category = undefined;
 let current_page = 0;
 let item_comparator = item_less;
-function get_item_comparator(weights) {
-    const priorities = dijkstra(build_graph(Array.from(weights.keys()), weights, layout), "start");
+function get_item_comparator(weights, adjaceny_list) {
+    const priorities = dijkstra(build_graph(Array.from(weights.keys()), weights, adjaceny_list), "start");
     return (a, b) => {
         if (a.status != b.status)
             return a.status > b.status;
@@ -158,9 +157,10 @@ async function load_items() {
 }
 async function refresh_item_comparator() {
     const manager = get_db_manager();
+    const box_adjacency = await manager.get_box_adjacency();
     const weights = await manager.get_box_weights();
     const weights_map = new Map(weights.map(entry => [entry.box_id, entry.total_weight]));
-    item_comparator = get_item_comparator(weights_map);
+    item_comparator = get_item_comparator(weights_map, box_adjacency);
 }
 function update_selected_category(new_category) {
     current_category = new_category;

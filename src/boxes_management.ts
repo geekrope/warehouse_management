@@ -2,8 +2,7 @@ import { add_log_entry, empty_container, get_element } from "./dom_utils.js";
 import { get_db_manager, refresh } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { Item } from "./types.js";
-import { dijkstra, build_graph, type AdjacencyList } from "./graph_utils.js";
-import box_adjacency_list from "./warehouse_layout.json" with { type: "json" };
+import { dijkstra, build_graph, type AdjacencyList, type Vertex, detect_cycle } from "./graph_utils.js";
 
 declare const vis: any;
 
@@ -114,11 +113,52 @@ export class BoxElement {
     }
 }
 
+async function add_edge(this: { adjacency: AdjacencyList, boxes: number[], weights: Map<number, number> }, edgeData: any, callback: any): Promise<void> {
+    const v = Number(edgeData.from);
+    const u = Number(edgeData.to);
+
+    const staged = [...this.adjacency, { v, u }];
+    const labels = this.boxes.map((box) => { return [box, 0] as [Vertex, number]; });
+    const has_cycle = detect_cycle(build_graph(this.boxes, this.weights, staged), new Map<Vertex, number>(labels), v);
+
+    if (has_cycle) {
+        callback(null);
+        console.log("Adding this edge would create a cycle. Operation canceled.");
+        return;
+    }
+
+    try {
+        await get_db_manager().add_box_connections([{ v, u }]);
+        await refresh();
+
+        callback(edgeData);
+    } catch (err) {
+        console.error("An error occurred while adding the edge:", err);
+        callback(null);
+    }
+}
+
+async function delete_edge(edgeData: any, callback: any) {
+    try {
+        for (const edgeId of edgeData.edges) {
+            const edge = network_instance.body.data.edges.get(edgeId);
+            if (edge) {
+                await get_db_manager().remove_box_connection(Number(edge.from), Number(edge.to));
+            }
+        }
+        await refresh();
+        callback(edgeData);
+    } catch (err) {
+        console.error("An error occurred while deleting the edge:", err);
+        callback(null);
+    }
+}
+
 export function render_box_graph(
     container: HTMLElement,
     boxes: number[],
     weights: Map<number, number>,
-    adjacency: AdjacencyList = box_adjacency_list
+    adjacency: AdjacencyList
 ) {
     if (typeof vis === "undefined") throw Error("vis-network library is not loaded.");
 
@@ -133,10 +173,9 @@ export function render_box_graph(
     const access_scores = dijkstra(graph, "start");
 
     const all_nodes_set = new Set<number>(boxes);
-    for (const [from_str, to] of Object.entries(adjacency)) {
-        const from = parseInt(from_str);
-        if (boxes.includes(from)) all_nodes_set.add(from);
-        if (boxes.includes(to)) all_nodes_set.add(to);
+    for (const { v, u } of adjacency) {
+        if (boxes.includes(v)) all_nodes_set.add(v);
+        if (boxes.includes(u)) all_nodes_set.add(u);
     }
 
     const nodes = Array.from(all_nodes_set).map(id => {
@@ -171,12 +210,11 @@ export function render_box_graph(
     });
 
     const edges: { from: number, to: number, label?: string, arrows: string, color?: any }[] = [];
-    for (const [from_str, to] of Object.entries(adjacency)) {
-        const from = parseInt(from_str);
-        if (all_nodes_set.has(from) && all_nodes_set.has(to)) {
+    for (const { v, u } of adjacency) {
+        if (all_nodes_set.has(v) && all_nodes_set.has(u)) {
             edges.push({
-                from,
-                to,
+                from: v,
+                to: u,
                 arrows: "to",
                 color: { color: "#95a5a6", highlight: "#e67e22" }
             });
@@ -184,6 +222,10 @@ export function render_box_graph(
     }
 
     const data = { nodes, edges };
+    const empty_handler = (_param: any, callback: any) => {
+        callback(null);
+        console.log(false, "This handler is disabled");
+    }
     const options = {
         layout: {
             hierarchical: {
@@ -193,12 +235,20 @@ export function render_box_graph(
         },
         physics: {
             enabled: true,
-            solver: "forceAtlas2Based"            
-        },        
+            solver: "forceAtlas2Based"
+        },
         interaction: {
             hover: true,
             dragNodes: true,
             zoomView: true
+        },
+        manipulation: {
+            enabled: true,
+            addNode: false,
+            editEdge: empty_handler,
+            deleteNode: false,
+            addEdge: add_edge.bind({ adjacency, boxes, weights }),
+            deleteEdge: delete_edge
         }
     };
 
@@ -209,7 +259,7 @@ export function render_weights_table(
     container: HTMLElement,
     boxes: number[],
     weights: Map<number, number>,
-    adjacency: AdjacencyList = box_adjacency_list
+    adjacency: AdjacencyList
 ) {
     container.innerHTML = "";
 
@@ -337,6 +387,8 @@ export async function refresh_boxes_management(): Promise<void> {
         const box_el = new BoxElement(box_id, total_weight, item_elements);
         boxes_container.appendChild(box_el.container);
     }
+
+    const box_adjacency_list = await manager.get_box_adjacency();
 
     render_box_graph(graph_container, boxes, weight_map, box_adjacency_list);
     render_weights_table(table_container, boxes, weight_map, box_adjacency_list);

@@ -389,6 +389,7 @@ button {
     border-radius: 8px;
     margin-top: 15px;
     position: relative;
+    overflow: hidden;
 }
 
 .weights-table-container {

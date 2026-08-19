@@ -1,4 +1,6 @@
 import { Item } from "./types.js";
+import {} from "./types.js";
+import {} from "./graph_utils.js";
 export class DatabaseManager {
     db_driver;
     constructor(db_driver) {
@@ -21,6 +23,11 @@ export class DatabaseManager {
             remove_date INTEGER DEFAULT NULL,
             FOREIGN KEY (box_id) REFERENCES boxes(id),
             FOREIGN KEY (category_id) REFERENCES categories(id));`);
+        await this.db_driver.run(`CREATE TABLE IF NOT EXISTS box_adjacency (
+            v INTEGER NOT NULL,
+            u INTEGER NOT NULL,
+            FOREIGN KEY (v) REFERENCES boxes(id),
+            FOREIGN KEY (u) REFERENCES boxes(id))`);
         await this.db_driver.run(`CREATE TRIGGER IF NOT EXISTS box_emplace_insert
             BEFORE INSERT ON items
             FOR EACH ROW
@@ -128,6 +135,23 @@ export class DatabaseManager {
             JOIN categories AS C ON I.category_id = C.id
             WHERE I.box_id = :box_id AND I.remove_date IS NULL
             ORDER BY C.title;`, Item.from, { ":box_id": box_id });
+    }
+    async get_box_adjacency() {
+        const edges = await this.db_driver.query(`SELECT v, u
+            FROM box_adjacency;`, (obj) => { return { v: obj.v, u: obj.u }; });
+        return edges;
+    }
+    async add_box_connections(adjacency) {
+        if (adjacency.length === 0)
+            return;
+        const values_clause = adjacency.map(() => "(?, ?)").join(", ");
+        const values = adjacency.flatMap(({ v, u }) => [v, u]);
+        await this.db_driver.run(`INSERT INTO box_adjacency 
+            (v, u) 
+            VALUES ${values_clause};`, values);
+    }
+    async remove_box_connection(v, u) {
+        await this.db_driver.run(`DELETE FROM box_adjacency WHERE v = :v AND u = :u;`, { ":v": v, ":u": u });
     }
     async get_snapshot(threshold) {
         return await this.db_driver.query(`SELECT C.title as title, COUNT(*) AS count

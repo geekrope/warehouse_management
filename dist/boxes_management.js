@@ -2,8 +2,7 @@ import { add_log_entry, empty_container, get_element } from "./dom_utils.js";
 import { get_db_manager, refresh } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { Item } from "./types.js";
-import { dijkstra, build_graph } from "./graph_utils.js";
-import box_adjacency_list from "./warehouse_layout.json" with { type: "json" };
+import { dijkstra, build_graph, detect_cycle } from "./graph_utils.js";
 let network_instance = null;
 export class BoxElement {
     box_id;
@@ -86,7 +85,44 @@ export class BoxElement {
         });
     }
 }
-export function render_box_graph(container, boxes, weights, adjacency = box_adjacency_list) {
+async function add_edge(edgeData, callback) {
+    const v = Number(edgeData.from);
+    const u = Number(edgeData.to);
+    const staged = [...this.adjacency, { v, u }];
+    const labels = this.boxes.map((box) => { return [box, 0]; });
+    const has_cycle = detect_cycle(build_graph(this.boxes, this.weights, staged), new Map(labels), v);
+    if (has_cycle) {
+        callback(null);
+        console.log("Adding this edge would create a cycle. Operation canceled.");
+        return;
+    }
+    try {
+        await get_db_manager().add_box_connections([{ v, u }]);
+        await refresh();
+        callback(edgeData);
+    }
+    catch (err) {
+        console.error("An error occurred while adding the edge:", err);
+        callback(null);
+    }
+}
+async function delete_edge(edgeData, callback) {
+    try {
+        for (const edgeId of edgeData.edges) {
+            const edge = network_instance.body.data.edges.get(edgeId);
+            if (edge) {
+                await get_db_manager().remove_box_connection(Number(edge.from), Number(edge.to));
+            }
+        }
+        await refresh();
+        callback(edgeData);
+    }
+    catch (err) {
+        console.error("An error occurred while deleting the edge:", err);
+        callback(null);
+    }
+}
+export function render_box_graph(container, boxes, weights, adjacency) {
     if (typeof vis === "undefined")
         throw Error("vis-network library is not loaded.");
     container.innerHTML = "";
@@ -97,12 +133,11 @@ export function render_box_graph(container, boxes, weights, adjacency = box_adja
     const graph = build_graph(boxes, weights, adjacency);
     const access_scores = dijkstra(graph, "start");
     const all_nodes_set = new Set(boxes);
-    for (const [from_str, to] of Object.entries(adjacency)) {
-        const from = parseInt(from_str);
-        if (boxes.includes(from))
-            all_nodes_set.add(from);
-        if (boxes.includes(to))
-            all_nodes_set.add(to);
+    for (const { v, u } of adjacency) {
+        if (boxes.includes(v))
+            all_nodes_set.add(v);
+        if (boxes.includes(u))
+            all_nodes_set.add(u);
     }
     const nodes = Array.from(all_nodes_set).map(id => {
         const weight = weights.get(id) ?? 0;
@@ -134,18 +169,21 @@ export function render_box_graph(container, boxes, weights, adjacency = box_adja
         };
     });
     const edges = [];
-    for (const [from_str, to] of Object.entries(adjacency)) {
-        const from = parseInt(from_str);
-        if (all_nodes_set.has(from) && all_nodes_set.has(to)) {
+    for (const { v, u } of adjacency) {
+        if (all_nodes_set.has(v) && all_nodes_set.has(u)) {
             edges.push({
-                from,
-                to,
+                from: v,
+                to: u,
                 arrows: "to",
                 color: { color: "#95a5a6", highlight: "#e67e22" }
             });
         }
     }
     const data = { nodes, edges };
+    const empty_handler = (_param, callback) => {
+        callback(null);
+        console.log(false, "This handler is disabled");
+    };
     const options = {
         layout: {
             hierarchical: {
@@ -161,11 +199,19 @@ export function render_box_graph(container, boxes, weights, adjacency = box_adja
             hover: true,
             dragNodes: true,
             zoomView: true
+        },
+        manipulation: {
+            enabled: true,
+            addNode: false,
+            editEdge: empty_handler,
+            deleteNode: false,
+            addEdge: add_edge.bind({ adjacency, boxes, weights }),
+            deleteEdge: delete_edge
         }
     };
     network_instance = new vis.Network(container, data, options);
 }
-export function render_weights_table(container, boxes, weights, adjacency = box_adjacency_list) {
+export function render_weights_table(container, boxes, weights, adjacency) {
     container.innerHTML = "";
     if (boxes.length === 0)
         return;
@@ -266,6 +312,7 @@ export async function refresh_boxes_management() {
         const box_el = new BoxElement(box_id, total_weight, item_elements);
         boxes_container.appendChild(box_el.container);
     }
+    const box_adjacency_list = await manager.get_box_adjacency();
     render_box_graph(graph_container, boxes, weight_map, box_adjacency_list);
     render_weights_table(table_container, boxes, weight_map, box_adjacency_list);
 }

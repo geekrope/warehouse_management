@@ -54,13 +54,12 @@ export function build_graph(boxes, weights, adjacency_list) {
     for (const box of boxes) {
         graph.set(box, new Map());
     }
-    for (const [box, neighbor] of Object.entries(adjacency_list)) {
-        const box_num = parseInt(box);
-        if (!boxes.includes(box_num) || !boxes.includes(neighbor)) {
+    for (const { v, u } of adjacency_list) {
+        if (!boxes.includes(v) || !boxes.includes(u)) {
             continue;
         }
-        graph.get(box_num)?.set(neighbor, weights.get(box_num) || 0);
-        orphans.delete(neighbor);
+        graph.get(v)?.set(u, weights.get(v) || 0);
+        orphans.delete(u);
     }
     for (const box of orphans) {
         graph.get("start")?.set(box, 0);

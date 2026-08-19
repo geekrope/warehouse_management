@@ -4,8 +4,7 @@ import { heapify, partial_heapsort } from "./heap.js";
 import { add_log_entry, get_element, CategoryInput, empty_container } from "./dom_utils.js";
 import { get_db_manager, refresh, get_category_titles, locate_category } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
-import { dijkstra, build_graph } from "./graph_utils.js";
-import layout from "./warehouse_layout.json" with { type: "json" };
+import { dijkstra, build_graph, type AdjacencyList } from "./graph_utils.js";
 
 const page_size: number = 5;
 
@@ -17,8 +16,8 @@ let current_category: Category | undefined = undefined;
 let current_page: number = 0;
 let item_comparator: ((a: Item, b: Item) => boolean) = item_less;
 
-function get_item_comparator(weights: Map<number, number>): (a: Item, b: Item) => boolean {
-    const priorities = dijkstra(build_graph(Array.from(weights.keys()), weights, layout), "start");
+function get_item_comparator(weights: Map<number, number>, adjaceny_list: AdjacencyList): (a: Item, b: Item) => boolean {
+    const priorities = dijkstra(build_graph(Array.from(weights.keys()), weights, adjaceny_list), "start");
 
     return (a: Item, b: Item): boolean => {
         if (a.status != b.status) return a.status > b.status;
@@ -188,9 +187,10 @@ async function load_items() {
 
 async function refresh_item_comparator() {
     const manager = get_db_manager();
+    const box_adjacency = await manager.get_box_adjacency();
     const weights = await manager.get_box_weights();
     const weights_map = new Map<number, number>(weights.map(entry => [entry.box_id, entry.total_weight]));
-    item_comparator = get_item_comparator(weights_map);
+    item_comparator = get_item_comparator(weights_map, box_adjacency);
 }
 
 function update_selected_category(new_category: Category | undefined) {

@@ -52,9 +52,9 @@ export function detect_cycle<T>(graph: Map<T, Map<T, number>>, labels: Map<T, nu
     return false;
 }
 
-export type AdjacencyList = Record<string, number>;
+export type AdjacencyList = {v: number, u: number}[];
 
-type Vertex = number | "start";
+export type Vertex = number | "start";
 
 export function build_graph(boxes: number[], weights: Map<number, number>, adjacency_list: AdjacencyList): Map<Vertex, Map<Vertex, number>> {
     const start_node: Vertex = "start";
@@ -67,13 +67,12 @@ export function build_graph(boxes: number[], weights: Map<number, number>, adjac
         graph.set(box, new Map<Vertex, number>());
     }
 
-    for (const [box, neighbor] of Object.entries(adjacency_list)) {
-        const box_num = parseInt(box);
-        if(!boxes.includes(box_num) || !boxes.includes(neighbor)) {
+    for (const {v, u} of adjacency_list) {
+        if(!boxes.includes(v) || !boxes.includes(u)) {
             continue;
         }
-        graph.get(box_num)?.set(neighbor, weights.get(box_num) || 0);
-        orphans.delete(neighbor);
+        graph.get(v)?.set(u, weights.get(v) || 0);
+        orphans.delete(u);
     }
 
     for (const box of orphans) {
