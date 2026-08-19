@@ -318,6 +318,82 @@ export function render_weights_table(
     container.appendChild(table);
 }
 
+let drag_autoscroll_active = false;
+let current_cursor_x = 0;
+let current_cursor_y = 0;
+let animation_frame_id: number | null = null;
+
+const BOUNDARY_THRESHOLD = 80;
+const MAX_SCROLL_SPEED = 22;
+
+function autoscroll_step(): void {
+    if (!drag_autoscroll_active) {
+        animation_frame_id = null;
+        return;
+    }
+
+    const vWidth = window.innerWidth;
+    const vHeight = window.innerHeight;
+
+    let deltaX = 0;
+    let deltaY = 0;
+
+    if (current_cursor_y < BOUNDARY_THRESHOLD) {
+        const factor = Math.min(1, Math.max(0, (BOUNDARY_THRESHOLD - current_cursor_y) / BOUNDARY_THRESHOLD));
+        deltaY = -Math.max(2, Math.round(factor * MAX_SCROLL_SPEED));
+    }
+    else if (current_cursor_y > vHeight - BOUNDARY_THRESHOLD) {
+        const factor = Math.min(1, Math.max(0, (current_cursor_y - (vHeight - BOUNDARY_THRESHOLD)) / BOUNDARY_THRESHOLD));
+        deltaY = Math.max(2, Math.round(factor * MAX_SCROLL_SPEED));
+    }
+
+    if (current_cursor_x < BOUNDARY_THRESHOLD) {
+        const factor = Math.min(1, Math.max(0, (BOUNDARY_THRESHOLD - current_cursor_x) / BOUNDARY_THRESHOLD));
+        deltaX = -Math.max(2, Math.round(factor * MAX_SCROLL_SPEED));
+    }
+    else if (current_cursor_x > vWidth - BOUNDARY_THRESHOLD) {
+        const factor = Math.min(1, Math.max(0, (current_cursor_x - (vWidth - BOUNDARY_THRESHOLD)) / BOUNDARY_THRESHOLD));
+        deltaX = Math.max(2, Math.round(factor * MAX_SCROLL_SPEED));
+    }
+
+    if (deltaX !== 0 || deltaY !== 0) {
+        const main_wrapper = document.querySelector(".main-wrapper") as HTMLElement | null;
+        if (main_wrapper) {
+            main_wrapper.scrollTop += deltaY;
+            main_wrapper.scrollLeft += deltaX;
+        }
+        window.scrollBy(deltaX, deltaY);
+    }
+
+    animation_frame_id = requestAnimationFrame(autoscroll_step);
+}
+
+function start_drag_autoscroll(e: DragEvent): void {
+    drag_autoscroll_active = true;
+    if (e.clientX !== 0 || e.clientY !== 0) {
+        current_cursor_x = e.clientX;
+        current_cursor_y = e.clientY;
+    }
+    if (!animation_frame_id) {
+        animation_frame_id = requestAnimationFrame(autoscroll_step);
+    }
+}
+
+function update_drag_autoscroll_cursor(e: DragEvent): void {
+    if (e.clientX !== 0 || e.clientY !== 0) {
+        current_cursor_x = e.clientX;
+        current_cursor_y = e.clientY;
+    }
+}
+
+function stop_drag_autoscroll(): void {
+    drag_autoscroll_active = false;
+    if (animation_frame_id !== null) {
+        cancelAnimationFrame(animation_frame_id);
+        animation_frame_id = null;
+    }
+}
+
 export function create_draggable_item_element(item: Item): HTMLElement {
     const card = document.createElement("div");
     card.className = "item-card draggable-item-card";
@@ -348,6 +424,15 @@ export function create_draggable_item_element(item: Item): HTMLElement {
             e.dataTransfer.setData("text/plain", JSON.stringify(item));
             e.dataTransfer.effectAllowed = "move";
         }
+        start_drag_autoscroll(e);
+    });
+
+    card.addEventListener("drag", (e: DragEvent) => {
+        update_drag_autoscroll_cursor(e);
+    });
+
+    card.addEventListener("dragend", () => {
+        stop_drag_autoscroll();
     });
 
     return card;
@@ -396,6 +481,20 @@ export async function refresh_boxes_management(): Promise<void> {
 
 export function init_boxes_management(): void {
     add_log_entry(renderPattern("initial_log"), "boxesLog");
+
+    document.addEventListener("dragover", (e: DragEvent) => {
+        if (drag_autoscroll_active) {
+            update_drag_autoscroll_cursor(e);
+        }
+    });
+
+    document.addEventListener("dragend", () => {
+        stop_drag_autoscroll();
+    });
+
+    document.addEventListener("drop", () => {
+        stop_drag_autoscroll();
+    });
 
     const boxesTab = document.querySelector('[data-page="boxes"]');
     if (boxesTab) {
