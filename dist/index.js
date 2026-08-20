@@ -7,6 +7,7 @@ import { init_backup } from "./backup.js";
 import { get_element } from "./dom_utils.js";
 import { init_boxes_management, refresh_boxes_management } from "./boxes_management.js";
 import { init_category_management, refresh_category_management } from "./category_management.js";
+import { init_dashboard, refresh_dashboard } from "./dashboard.js";
 import {} from "./types.js";
 const navigate_action = new Map([
     ["intake", refresh_intake],
@@ -14,6 +15,7 @@ const navigate_action = new Map([
     ["boxes_management", refresh_boxes_management],
     ["category_management", refresh_category_management],
     ["backup", () => { }],
+    ["dashboard", refresh_dashboard],
     ["stats", () => { }]
 ]);
 let db_manager = undefined;
@@ -82,6 +84,7 @@ export async function main() {
         init_item_management();
         init_boxes_management();
         init_category_management();
+        init_dashboard();
         setup_navigation();
         await handle_navigation();
     }

@@ -40,6 +40,7 @@ const LOCALES = {
 
         page_title_restore: "КУБЫШКА",
         header_restore: "КОНСПИРАТИВНАЯ ХАТА",
+        page_title_dashboard: "МАЛЯВЫ В БАЗУ",
         btn_export: "ЗАСУХАРИТЬСЯ",
         btn_import: "ПОДНЯТЬ АРХИВ",
         page_number: "СТРАНИЦА {num}",
@@ -110,6 +111,7 @@ const LOCALES = {
 
         page_title_restore: "BACKUP",
         header_restore: "DATA MANAGEMENT",
+        page_title_dashboard: "SQL DASHBOARD",
         btn_export: "EXPORT DATA",
         btn_import: "IMPORT ARCHIVE",
         page_number: "PAGE {num}",
@@ -180,6 +182,7 @@ const LOCALES = {
 
         page_title_restore: "КЛАДОВАЯ ПАМЯТИ",
         header_restore: "РАСПОРЯЖЕНIЕ ДОБРОМЪ",
+        page_title_dashboard: "ВЕДОМОСТЬ ЗАПРОСОВЪ",
         btn_export: "СБЕРЕЧИ ВЪ СВИТОКЪ",
         btn_import: "ПОДНЯТИ ИЗЪ СВИТКА",
         page_number: "БЕРЕСТА {num}",
@@ -250,6 +253,7 @@ const LOCALES = {
 
         page_title_restore: "РЕЗЕРВНОЕ КОПИРОВАНИЕ",
         header_restore: "УПРАВЛЕНИЕ ДАННЫМИ",
+        page_title_dashboard: "SQL ПАНЕЛЬ",
         btn_export: "ЭКСПОРТИРОВАТЬ",
         btn_import: "ЗАГРУЗИТЬ АРХИВ",
         page_number: "СТРАНИЦА {num}",

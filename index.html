@@ -7,8 +7,11 @@
     <title></title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="vis_styles.css">
+    <link rel="stylesheet" href="src/modules/github.min.css">
     <script src="src/modules/sql-wasm.js"></script>
     <script src="src/modules/vis-network.min.js"></script>
+    <script src="src/modules/highlight.min.js"></script>
+    <script src="src/modules/sql.min.js"></script>
 </head>
 
 <body>
@@ -25,6 +28,8 @@
                 <button class="nav-tab" data-page="boxes_management">🗃️ <span
                         data-locale="page_title_boxes"></span></button>
                 <button class="nav-tab" data-page="backup">💾 <span data-locale="page_title_restore"></span></button>
+                <button class="nav-tab" data-page="dashboard">💻 <span
+                        data-locale="page_title_dashboard"></span></button>
                 <button class="nav-tab" data-page="stats">📊 <span data-locale="page_title_stats"></span></button>
             </nav>
         </div>
@@ -123,6 +128,66 @@
 
                 <div class="card">
                     <div id="backupLog" class="log-area">
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD PAGE (RAW SQL QUERY & MUTATION) -->
+            <div id="dashboard" class="page">
+                <div class="card" id="dashboardQueryCard">
+                    <h2>🔍EXECUTE QUERY</h2>
+                    <div class="editor-container">
+                        <pre class="editor-highlight"><code id="queryEditor" class="language-sql" style="padding: 0; background: none"></code></pre>
+                        <textarea id="queryEditorInput" class="editor-input" spellcheck="false"></textarea>
+                    </div>                    
+                    <div class="dashboard-presets">
+                        <span class="preset-label">Presets:</span>
+                        <button class="preset-chip dashboard-preset-btn" data-target="query"
+                            data-sql="SELECT * FROM items WHERE remove_date IS NULL LIMIT 20;">Items</button>
+                        <button class="preset-chip dashboard-preset-btn" data-target="query"
+                            data-sql="SELECT * FROM categories WHERE deleted = 0;">Categories</button>
+                        <button class="preset-chip dashboard-preset-btn" data-target="query"
+                            data-sql="SELECT * FROM boxes ORDER BY id ASC;">Boxes</button>
+                        <button class="preset-chip dashboard-preset-btn" data-target="query"
+                            data-sql="SELECT * FROM box_adjacency;">Adjacency</button>
+                        <button class="preset-chip dashboard-preset-btn" data-target="query"
+                            data-sql="SELECT type, name, sql FROM sqlite_master WHERE type IN ('table', 'trigger');">Schema</button>
+                    </div>
+                    <div class="button-group" id="runQueryBtnGroup" style="margin-top: 15px;">
+                        <button class="btn-primary" id="executeSelectBtn">Execute
+                            Query</button>
+                        <button class="btn-secondary" id="clearSelectBtn">Clear</button>
+                    </div>
+                    <div id="queryResultsContainer" class="query-results-area"></div>
+                </div>
+
+                <div class="card" id="dashboardMutationCard">
+                    <h2>⚡EXECUTE MUTATION QUERY</h2>
+                    <div class="editor-container">
+                        <pre class="editor-highlight"><code id="mutationEditor" class="language-sql" style="padding: 0; background: none"></code></pre>
+                        <textarea id="mutationEditorInput" class="editor-input" spellcheck="false"></textarea>
+                    </div> 
+                    <div class="dashboard-presets">
+                        <span class="preset-label">Presets:</span>
+                        <button class="preset-chip dashboard-preset-btn" data-target="mutation"
+                            data-sql="UPDATE items SET status = 1 WHERE id = 1;">Update Item</button>
+                        <button class="preset-chip dashboard-preset-btn" data-target="mutation"
+                            data-sql="INSERT OR IGNORE INTO boxes (id) VALUES (99);">Add Box</button>
+                        <button class="preset-chip dashboard-preset-btn" data-target="mutation"
+                            data-sql="UPDATE categories SET weight = 150.0 WHERE title = 'Default';">Update
+                            Category</button>
+                    </div>
+                    <div class="button-group" id="runMutationBtnGroup" style="margin-top: 15px;">
+                        <button class="btn-success" id="executeMutationBtn">Apply
+                            Changes</button>
+                        <button class="btn-secondary" id="clearMutationBtn">Clear</button>
+                    </div>
+                    <div id="mutationStatusContainer" class="mutation-status-area"></div>
+                </div>
+
+                <div class="card">
+                    <div id="dashboardLog" class="log-area">
+                        <div class="log-entry" data-locale="initial_log"></div>
                     </div>
                 </div>
             </div>

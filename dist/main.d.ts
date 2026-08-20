@@ -1,4 +1,4 @@
-import type { IDatabaseDriver } from "./db_driver.js";
+import type { IDatabaseDriver, SqlParams } from "./db_driver.js";
 import { Item } from "./types.js";
 import { type Category } from "./types.js";
 import { type AdjacencyList } from "./graph_utils.js";
@@ -28,5 +28,7 @@ export declare class DatabaseManager {
         category: string;
         count: number;
     }[]>;
+    execute_raw(sql: string, params: SqlParams): Promise<any[]>;
+    run_raw(sql: string, params: SqlParams): Promise<void>;
 }
 //# sourceMappingURL=main.d.ts.map

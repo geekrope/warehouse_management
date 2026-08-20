@@ -10,7 +10,8 @@ export class DatabaseManager {
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL UNIQUE,
-            weight REAL DEFAULT NULL);`);
+            weight REAL DEFAULT NULL,
+            deleted BOOLEAN NOT NULL DEFAULT 0);`);
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS boxes (
             id INTEGER PRIMARY KEY)`);
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS items (
@@ -27,7 +28,8 @@ export class DatabaseManager {
             v INTEGER NOT NULL,
             u INTEGER NOT NULL,
             FOREIGN KEY (v) REFERENCES boxes(id),
-            FOREIGN KEY (u) REFERENCES boxes(id))`);
+            FOREIGN KEY (u) REFERENCES boxes(id),
+            PRIMARY KEY (v, u));`);
         await this.db_driver.run(`CREATE TRIGGER IF NOT EXISTS box_emplace_insert
             BEFORE INSERT ON items
             FOR EACH ROW
@@ -50,7 +52,7 @@ export class DatabaseManager {
         const where_clause = categories.map(() => "?").join(", ");
         const category_ids = await this.db_driver.query(`SELECT title, id 
             FROM categories 
-            WHERE title IN (${where_clause});`, (obj) => { return { key: obj.title, value: obj.id }; }, categories);
+            WHERE title IN (${where_clause}) AND deleted = 0;`, (obj) => { return { key: obj.title, value: obj.id }; }, categories);
         return new Map(category_ids.map(({ key, value }) => [key, value]));
     }
     async add_categories(...categories) {
@@ -58,15 +60,29 @@ export class DatabaseManager {
         const values = categories.flatMap(cat => [cat.title, cat.weight]);
         await this.db_driver.run(`INSERT INTO categories 
             (title, weight) 
-            VALUES ${values_clause};`, values);
+            VALUES ${values_clause}
+            ON CONFLICT (title) DO UPDATE
+            SET deleted = 0,
+                weight = excluded.weight;`, values);
     }
     async remove_category(title) {
-        await this.db_driver.run(`DELETE FROM categories
-            WHERE title = :title;`, { ":title": title });
+        const no_linking_items = await this.db_driver.query(`SELECT COUNT(*) AS count 
+            FROM items AS I
+            WHERE I.category_id = (SELECT id FROM categories WHERE title = :title)
+            AND I.remove_date IS NULL;`, (obj) => obj.count, { ":title": title });
+        if (no_linking_items[0] == 0) {
+            await this.db_driver.run(`UPDATE categories
+                SET deleted = 1
+                WHERE title = :title;`, { ":title": title });
+        }
+        else {
+            throw new Error(`Cannot delete category "${title}" because it is linked to existing items.`);
+        }
     }
     async get_categories() {
         return await this.db_driver.query(`SELECT title, weight 
             FROM categories 
+            WHERE deleted = 0
             ORDER BY title ASC;`, (obj) => { return { title: obj.title, weight: obj.weight }; });
     }
     async add_items(...item) {
@@ -90,7 +106,7 @@ export class DatabaseManager {
             WHERE id = :id;`, { ":date": Date.now(), ":id": id });
     }
     async update_item(id, args) {
-        const { category, ...rest } = args;
+        const { category, id: _id, ...rest } = args;
         const update_obj = { ...rest };
         if (category !== undefined) {
             const category_map = await this.get_category_ids(category);
@@ -123,11 +139,11 @@ export class DatabaseManager {
             ORDER BY box_id ASC;`, (obj) => obj.box_id);
     }
     async get_box_weights() {
-        return await this.db_driver.query(`SELECT I.box_id as box_id, SUM(COALESCE(C.weight, 0)) AS total_weight
-            FROM items AS I
-            JOIN categories AS C ON I.category_id = C.id
-            WHERE I.remove_date IS NULL
-            GROUP BY I.box_id`, (obj) => { return { box_id: obj.box_id, total_weight: obj.total_weight }; });
+        return await this.db_driver.query(`SELECT B.id as box_id, SUM(COALESCE(C.weight, 0)) AS total_weight
+            FROM boxes AS B
+            LEFT JOIN items AS I ON B.id = I.box_id AND I.remove_date IS NULL
+            LEFT JOIN categories AS C ON I.category_id = C.id
+            GROUP BY B.id`, (obj) => { return { box_id: obj.box_id, total_weight: obj.total_weight }; });
     }
     async get_box_content(box_id) {
         return await this.db_driver.query(`SELECT I.*, C.title AS category
@@ -162,6 +178,12 @@ export class DatabaseManager {
             JOIN categories AS C ON I.category_id = C.id
             WHERE I.add_date <= :threshold AND (I.remove_date IS NULL OR I.remove_date > :threshold)
             GROUP BY C.title;`, (obj) => ({ category: obj.title, count: obj.count }), { ":threshold": threshold });
+    }
+    async execute_raw(sql, params) {
+        return await this.db_driver.query_raw(sql, params);
+    }
+    async run_raw(sql, params) {
+        await this.db_driver.run(sql, params);
     }
 }
 //# sourceMappingURL=main.js.map

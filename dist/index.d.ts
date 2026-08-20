@@ -5,7 +5,7 @@ declare global {
         initSqlJs: (config?: any) => Promise<any>;
     }
 }
-type Page = "intake" | "item_management" | "boxes_management" | "category_management" | "backup" | "stats";
+type Page = "intake" | "item_management" | "boxes_management" | "category_management" | "backup" | "dashboard" | "stats";
 export declare function navigate_to(page: Page): Promise<void>;
 export declare function handle_navigation(): Promise<void>;
 export declare function get_db_manager(): DatabaseManager;

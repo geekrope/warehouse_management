@@ -36,6 +36,7 @@ declare const LOCALES: {
         add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
+        page_title_dashboard: string;
         btn_export: string;
         btn_import: string;
         page_number: string;
@@ -101,6 +102,7 @@ declare const LOCALES: {
         add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
+        page_title_dashboard: string;
         btn_export: string;
         btn_import: string;
         page_number: string;
@@ -166,6 +168,7 @@ declare const LOCALES: {
         add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
+        page_title_dashboard: string;
         btn_export: string;
         btn_import: string;
         page_number: string;
@@ -231,6 +234,7 @@ declare const LOCALES: {
         add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
+        page_title_dashboard: string;
         btn_export: string;
         btn_import: string;
         page_number: string;

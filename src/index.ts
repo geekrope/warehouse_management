@@ -7,6 +7,7 @@ import { init_backup } from "./backup.js";
 import { get_element } from "./dom_utils.js";
 import { init_boxes_management, refresh_boxes_management } from "./boxes_management.js";
 import { init_category_management, refresh_category_management } from "./category_management.js";
+import { init_dashboard, refresh_dashboard } from "./dashboard.js";
 import { type Category } from "./types.js";
 
 declare global {
@@ -15,7 +16,7 @@ declare global {
     }
 }
 
-type Page = "intake" | "item_management" | "boxes_management" | "category_management" | "backup" | "stats";
+type Page = "intake" | "item_management" | "boxes_management" | "category_management" | "backup" | "dashboard" | "stats";
 
 const navigate_action: Map<Page, () => void> = new Map([
     ["intake", refresh_intake],
@@ -23,6 +24,7 @@ const navigate_action: Map<Page, () => void> = new Map([
     ["boxes_management", refresh_boxes_management],
     ["category_management", refresh_category_management],
     ["backup", () => { /* No refresh needed for backup */ }],
+    ["dashboard", refresh_dashboard],
     ["stats", () => { /* not implemented */ }]
 ]);
 
@@ -109,6 +111,7 @@ export async function main(): Promise<void> {
         init_item_management();
         init_boxes_management();
         init_category_management();
+        init_dashboard();
 
         setup_navigation();
         await handle_navigation();
