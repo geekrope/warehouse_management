@@ -1,10 +1,7 @@
 import { get_element, add_log_entry } from "./dom_utils.js";
 import { get_db_manager, reload_categories } from "./index.js";
 function updateHighlight(code_block, input) {
-    let content = input.value;
-    if (content.endsWith('\n')) {
-        content += ' ';
-    }
+    let content = input.innerText;
     code_block.textContent = content;
     code_block.removeAttribute('data-highlighted');
     hljs.highlightElement(code_block);
@@ -17,8 +14,8 @@ export function init_dashboard() {
     query_editor_input.oninput = () => {
         updateHighlight(query_editor, query_editor_input);
     };
-    mutation_editor.oninput = () => {
-        updateHighlight(query_editor, query_editor_input);
+    mutation_editor_input.oninput = () => {
+        updateHighlight(mutation_editor, mutation_editor_input);
     };
     const executeQueryBtn = get_element("executeSelectBtn");
     executeQueryBtn.addEventListener("click", async () => {
@@ -45,11 +42,11 @@ export function init_dashboard() {
             const sql = btn.getAttribute("data-sql");
             const target = btn.getAttribute("data-target");
             if (sql && target === "query" && query_editor) {
-                query_editor_input.value = sql;
+                query_editor_input.innerText = sql;
                 updateHighlight(query_editor, query_editor_input);
             }
             else if (sql && target === "mutation" && mutation_editor) {
-                mutation_editor_input.value = sql;
+                mutation_editor_input.innerHTML = sql;
                 updateHighlight(mutation_editor, mutation_editor_input);
             }
         });
@@ -60,7 +57,7 @@ export async function refresh_dashboard() {
 }
 async function execute_read_query() {
     const query_editor_input = get_element("queryEditorInput");
-    const sql = query_editor_input.value;
+    const sql = query_editor_input.innerText;
     const resultsContainer = get_element("queryResultsContainer");
     if (!sql) {
         add_log_entry("Query cannot be empty", "dashboardLog", true);
@@ -123,9 +120,10 @@ async function execute_read_query() {
         add_log_entry(`Query error: ${err.message || String(err)}`, "dashboardLog", true);
     }
 }
+// TODO: Commit the state and add rollback functionality for mutation queries.
 async function execute_mutation_query() {
     const mutation_editor = get_element("mutationEditorInput");
-    const sql = mutation_editor.value;
+    const sql = mutation_editor.innerHTML;
     const statusContainer = get_element("mutationStatusContainer");
     if (!sql) {
         add_log_entry("Mutation statement cannot be empty", "dashboardLog", true);

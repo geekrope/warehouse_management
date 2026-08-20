@@ -377,6 +377,7 @@ export async function refresh_boxes_management() {
         }
         return;
     }
+    // Use heap for sorting items by date, status and lexicographicaly by category
     for (const { box_id, total_weight } of zipped_boxes) {
         const items = await manager.get_box_content(box_id);
         const item_elements = items.map(item => create_draggable_item_element(item));

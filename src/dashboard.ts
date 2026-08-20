@@ -3,12 +3,8 @@ import { get_db_manager, reload_categories } from "./index.js";
 
 declare const hljs: any;
 
-function updateHighlight(code_block: HTMLElement, input: HTMLTextAreaElement): void {
-    let content = input.value;
-
-    if (content.endsWith('\n')) {
-        content += ' ';
-    }
+function updateHighlight(code_block: HTMLElement, input: HTMLElement): void {
+    let content = input.innerText;
 
     code_block.textContent = content;
     code_block.removeAttribute('data-highlighted');    
@@ -17,16 +13,16 @@ function updateHighlight(code_block: HTMLElement, input: HTMLTextAreaElement): v
 
 export function init_dashboard(): void {
     const query_editor = get_element<HTMLElement>("queryEditor");
-    const query_editor_input = get_element<HTMLTextAreaElement>("queryEditorInput");
+    const query_editor_input = get_element<HTMLElement>("queryEditorInput");
     const mutation_editor = get_element<HTMLElement>("mutationEditor");
-    const mutation_editor_input = get_element<HTMLTextAreaElement>("mutationEditorInput");
+    const mutation_editor_input = get_element<HTMLElement>("mutationEditorInput");
 
     query_editor_input.oninput = () => {
         updateHighlight(query_editor, query_editor_input);
     }
 
-    mutation_editor.oninput = () => {
-        updateHighlight(query_editor, query_editor_input);
+    mutation_editor_input.oninput = () => {
+        updateHighlight(mutation_editor, mutation_editor_input);
     }
 
     const executeQueryBtn = get_element<HTMLButtonElement>("executeSelectBtn");
@@ -58,10 +54,10 @@ export function init_dashboard(): void {
             const sql = btn.getAttribute("data-sql");
             const target = btn.getAttribute("data-target");
             if (sql && target === "query" && query_editor) {
-                query_editor_input.value = sql;
+                query_editor_input.innerText = sql;
                 updateHighlight(query_editor, query_editor_input);
             } else if (sql && target === "mutation" && mutation_editor) {
-                mutation_editor_input.value = sql;
+                mutation_editor_input.innerHTML = sql;
                 updateHighlight(mutation_editor, mutation_editor_input);
             }
         });
@@ -73,8 +69,8 @@ export async function refresh_dashboard(): Promise<void> {
 }
 
 async function execute_read_query(): Promise<void> {
-    const query_editor_input = get_element<HTMLTextAreaElement>("queryEditorInput");
-    const sql = query_editor_input.value;
+    const query_editor_input = get_element<HTMLElement>("queryEditorInput");
+    const sql = query_editor_input.innerText;
     const resultsContainer = get_element<HTMLDivElement>("queryResultsContainer");
 
     if (!sql) {
@@ -145,9 +141,10 @@ async function execute_read_query(): Promise<void> {
     }
 }
 
+// TODO: Commit the state and add rollback functionality for mutation queries.
 async function execute_mutation_query(): Promise<void> {
-    const mutation_editor = get_element<HTMLTextAreaElement>("mutationEditorInput");
-    const sql = mutation_editor.value;
+    const mutation_editor = get_element<HTMLElement>("mutationEditorInput");
+    const sql = mutation_editor.innerHTML;
     const statusContainer = get_element<HTMLDivElement>("mutationStatusContainer");
 
     if (!sql) {
