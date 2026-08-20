@@ -14,7 +14,6 @@ export declare class CategoryInput {
     get value(): string;
     set value(val: string);
 }
-export type FieldType = "text" | "number" | "date" | "categorical" | "select";
 export type BaseFieldConfig = {
     name: string;
     label: string;

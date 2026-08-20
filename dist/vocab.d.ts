@@ -31,6 +31,9 @@ declare const LOCALES: {
         category_title_label: string;
         category_weight_label: string;
         weight: string;
+        header_box_add: string;
+        label_add_box: string;
+        add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
         btn_export: string;
@@ -93,6 +96,9 @@ declare const LOCALES: {
         category_title_label: string;
         category_weight_label: string;
         weight: string;
+        header_box_add: string;
+        label_add_box: string;
+        add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
         btn_export: string;
@@ -155,6 +161,9 @@ declare const LOCALES: {
         category_title_label: string;
         category_weight_label: string;
         weight: string;
+        header_box_add: string;
+        label_add_box: string;
+        add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
         btn_export: string;
@@ -217,6 +226,9 @@ declare const LOCALES: {
         category_title_label: string;
         category_weight_label: string;
         weight: string;
+        header_box_add: string;
+        label_add_box: string;
+        add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
         btn_export: string;

@@ -215,6 +215,13 @@ export class DatabaseManager {
         return edges;
     }
 
+    public async add_box(box_id: number): Promise<void> {
+        await this.db_driver.run(
+            `INSERT INTO boxes (id) VALUES (:box_id);`,
+            { ":box_id": box_id }
+        );
+    }
+
     public async add_box_connections(adjacency: AdjacencyList): Promise<void> {
         if (adjacency.length === 0) return;
 

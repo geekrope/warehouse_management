@@ -1,5 +1,5 @@
 import { add_log_entry, get_element, DynamicForm } from "./dom_utils.js";
-import { get_db_manager, refresh, get_categories_list } from "./index.js";
+import { get_db_manager, reload_categories, get_categories_list } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 let category_form = undefined;
 async function add_category() {
@@ -20,15 +20,15 @@ async function add_category() {
             throw new Error("Category already exists");
         await manager.add_categories(category);
         category_form.reset();
+        await refresh_category_management();
         add_log_entry(renderPattern("log_add_cat", { val: repr(category) }), "categoriesLog");
-        await refresh();
     }
     catch (error) {
         console.error("Failed to add category:", error);
         add_log_entry(renderPattern("log_add_cat_fail"), "categoriesLog", true);
     }
 }
-export function init_category_management() {
+export async function init_category_management() {
     const categoryCard = get_element("categoryCard");
     category_form = new DynamicForm([
         {
@@ -50,14 +50,15 @@ export function init_category_management() {
     });
     category_form.form.id = "categoryForm";
     categoryCard.appendChild(category_form.form);
+    await refresh_category_management();
+    add_log_entry(renderPattern("initial_log"), "categoriesLog");
 }
-export function refresh_category_management() {
+export async function refresh_category_management() {
     const categoriesList = document.getElementById("categoriesList");
     if (!categoriesList)
         return;
     categoriesList.innerHTML = "";
-    const manager = get_db_manager();
-    const categories = get_categories_list();
+    const categories = await reload_categories();
     for (const cat of categories) {
         const card = document.createElement("div");
         card.className = "item-card";
@@ -77,9 +78,10 @@ export function refresh_category_management() {
         deleteBtn.textContent = renderPattern("btn_delete");
         deleteBtn.addEventListener("click", async () => {
             try {
+                const manager = get_db_manager();
                 await manager.remove_category(cat.title);
+                await refresh_category_management();
                 add_log_entry(renderPattern("log_delete_cat", { val: repr(cat) }), "categoriesLog");
-                await refresh();
             }
             catch (error) {
                 console.error("Failed to delete category:", error);

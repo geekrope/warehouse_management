@@ -17,15 +17,15 @@ async function import_backup() {
     }
 }
 async function export_backup() {
-    const adapter = new LocalFileAdapter("database_backup.sqlite");
+    const adapter = new LocalFileAdapter(`database_backup_${Date.now()}.sqlite`);
     const indexed_db_adapter = new IndexedDbAdapter();
     await transfer(indexed_db_adapter, adapter);
-    add_log_entry(renderPattern("log_export"), "backupLog");
 }
 export function init_backup() {
     const importBtn = get_element("importBtn");
     const exportBtn = get_element("exportBtn");
     importBtn.onclick = import_backup;
     exportBtn.onclick = export_backup;
+    add_log_entry(renderPattern("log_export"), "backupLog");
 }
 //# sourceMappingURL=backup.js.map

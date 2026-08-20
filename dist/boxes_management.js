@@ -1,5 +1,5 @@
-import { add_log_entry, empty_container, get_element } from "./dom_utils.js";
-import { get_db_manager, refresh } from "./index.js";
+import { add_log_entry, empty_container, get_element, DynamicForm } from "./dom_utils.js";
+import { get_db_manager } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { Item } from "./types.js";
 import { dijkstra, build_graph, detect_cycle } from "./graph_utils.js";
@@ -73,7 +73,7 @@ export class BoxElement {
                     meta: repr(item),
                     box: this.box_id
                 }), "boxesLog");
-                await refresh();
+                await refresh_boxes_management();
             }
             catch (err) {
                 console.error("Failed to move item to box:", err);
@@ -98,7 +98,7 @@ async function add_edge(edgeData, callback) {
     }
     try {
         await get_db_manager().add_box_connections([{ v, u }]);
-        await refresh();
+        await refresh_boxes_management();
         callback(edgeData);
     }
     catch (err) {
@@ -114,7 +114,7 @@ async function delete_edge(edgeData, callback) {
                 await get_db_manager().remove_box_connection(Number(edge.from), Number(edge.to));
             }
         }
-        await refresh();
+        await refresh_boxes_management();
         callback(edgeData);
     }
     catch (err) {
@@ -270,22 +270,18 @@ function autoscroll_step() {
     const vHeight = window.innerHeight;
     let deltaX = 0;
     let deltaY = 0;
-    // Top screen boundary
     if (current_cursor_y < BOUNDARY_THRESHOLD) {
         const factor = Math.min(1, Math.max(0, (BOUNDARY_THRESHOLD - current_cursor_y) / BOUNDARY_THRESHOLD));
         deltaY = -Math.max(2, Math.round(factor * MAX_SCROLL_SPEED));
     }
-    // Bottom screen boundary
     else if (current_cursor_y > vHeight - BOUNDARY_THRESHOLD) {
         const factor = Math.min(1, Math.max(0, (current_cursor_y - (vHeight - BOUNDARY_THRESHOLD)) / BOUNDARY_THRESHOLD));
         deltaY = Math.max(2, Math.round(factor * MAX_SCROLL_SPEED));
     }
-    // Left screen boundary
     if (current_cursor_x < BOUNDARY_THRESHOLD) {
         const factor = Math.min(1, Math.max(0, (BOUNDARY_THRESHOLD - current_cursor_x) / BOUNDARY_THRESHOLD));
         deltaX = -Math.max(2, Math.round(factor * MAX_SCROLL_SPEED));
     }
-    // Right screen boundary
     else if (current_cursor_x > vWidth - BOUNDARY_THRESHOLD) {
         const factor = Math.min(1, Math.max(0, (current_cursor_x - (vWidth - BOUNDARY_THRESHOLD)) / BOUNDARY_THRESHOLD));
         deltaX = Math.max(2, Math.round(factor * MAX_SCROLL_SPEED));
@@ -392,6 +388,23 @@ export async function refresh_boxes_management() {
     render_weights_table(table_container, boxes, weight_map, box_adjacency_list);
 }
 export function init_boxes_management() {
+    const form = new DynamicForm([
+        {
+            name: "boxNumber",
+            type: "number",
+            label: renderPattern("label_add_box"),
+            required: true
+        }
+    ], renderPattern("add_box_btn"), async (values) => {
+        const number = Number(values["boxNumber"]);
+        const manager = get_db_manager();
+        if (isNaN(number))
+            throw new Error("Box number field is not initialized");
+        await manager.add_box(number);
+        await refresh_boxes_management();
+    });
+    const form_container = get_element("boxAddCard");
+    form_container.appendChild(form.form);
     add_log_entry(renderPattern("initial_log"), "boxesLog");
     document.addEventListener("dragover", (e) => {
         if (drag_autoscroll_active) {
@@ -412,5 +425,6 @@ export function init_boxes_management() {
             }, 50);
         });
     }
+    add_log_entry(renderPattern("initial_log"), "boxesLog");
 }
 //# sourceMappingURL=boxes_management.js.map

@@ -1,7 +1,7 @@
 import { Item, item_less } from "./types.js";
 import { heapify, partial_heapsort } from "./heap.js";
 import { add_log_entry, get_element, CategoryInput, empty_container } from "./dom_utils.js";
-import { get_db_manager, refresh, get_category_titles, locate_category } from "./index.js";
+import { get_db_manager, get_category_titles, locate_category } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { dijkstra, build_graph } from "./graph_utils.js";
 const page_size = 5;
@@ -72,7 +72,7 @@ function render_item(item) {
                 meta: repr(item),
                 status: new_status_str
             }), "storageLog");
-            await refresh();
+            await refresh_item_management();
         }
         catch (error) {
             console.error("Failed to update status:", error);
@@ -89,7 +89,7 @@ function render_item(item) {
             add_log_entry(renderPattern("log_delete", {
                 meta: repr(item)
             }), "storageLog");
-            await refresh();
+            await refresh_item_management();
         }
         catch (error) {
             console.error("Failed to delete item:", error);
@@ -187,6 +187,7 @@ export function init_item_management() {
             render_current_page();
         }
     });
+    add_log_entry(renderPattern("initial_log"), "storageLog");
 }
 export async function refresh_item_management() {
     const category_input = get_category_input();

@@ -21,7 +21,7 @@ export function empty_container(): HTMLDivElement {
     const emptyContainer = document.createElement("div");
     emptyContainer.className = "empty-state";
 
-    /*emptyContainer.innerHTML = 
+    emptyContainer.innerHTML = 
     `<model-viewer 
         src="tin_model.glb"
         environment-image="neutral"
@@ -33,15 +33,15 @@ export function empty_container(): HTMLDivElement {
         orientation="0deg -60deg 0deg" 
         auto-rotate 
         style="width:300px; height:300px;">
-    </model-viewer>`;*/
+    </model-viewer>`;
 
-    const img = document.createElement("img");
+    /*const img = document.createElement("img");
     img.classList = "empty-state-img";
     img.src = "empty_list.svg";
     img.style.width = "300px";
     img.style.height = "300px";
 
-    emptyContainer.appendChild(img);
+    emptyContainer.appendChild(img);*/
     
     return emptyContainer;
 }
@@ -109,8 +109,6 @@ export class CategoryInput {
         this.input.value = val;
     }
 }
-
-export type FieldType = "text" | "number" | "date" | "categorical" | "select";
 
 export type BaseFieldConfig = {
     name: string;

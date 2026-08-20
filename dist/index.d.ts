@@ -5,10 +5,14 @@ declare global {
         initSqlJs: (config?: any) => Promise<any>;
     }
 }
+type Page = "intake" | "item_management" | "boxes_management" | "category_management" | "backup" | "stats";
+export declare function navigate_to(page: Page): Promise<void>;
+export declare function handle_navigation(): Promise<void>;
 export declare function get_db_manager(): DatabaseManager;
 export declare function get_categories_list(): Category[];
 export declare function get_category_titles(): string[];
 export declare function locate_category(category_title: string): Category | undefined;
-export declare function refresh(): Promise<void>;
+export declare function reload_categories(): Promise<Category[]>;
 export declare function main(): Promise<void>;
+export {};
 //# sourceMappingURL=index.d.ts.map

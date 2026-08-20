@@ -19,25 +19,26 @@ export function add_log_entry(message, container_id, is_error = false) {
 export function empty_container() {
     const emptyContainer = document.createElement("div");
     emptyContainer.className = "empty-state";
-    /*emptyContainer.innerHTML =
-    `<model-viewer
+    emptyContainer.innerHTML =
+        `<model-viewer 
         src="tin_model.glb"
         environment-image="neutral"
         exposure="1.2"
         light-intensity="3"
-        shadow-intensity="0.2"
-        camera-controls
-        rotation-per-second="60deg"
-        orientation="0deg -60deg 0deg"
-        auto-rotate
+        shadow-intensity="0.2" 
+        camera-controls 
+        rotation-per-second="60deg" 
+        orientation="0deg -60deg 0deg" 
+        auto-rotate 
         style="width:300px; height:300px;">
-    </model-viewer>`;*/
-    const img = document.createElement("img");
+    </model-viewer>`;
+    /*const img = document.createElement("img");
     img.classList = "empty-state-img";
     img.src = "empty_list.svg";
     img.style.width = "300px";
     img.style.height = "300px";
-    emptyContainer.appendChild(img);
+
+    emptyContainer.appendChild(img);*/
     return emptyContainer;
 }
 export class CategoryInput {

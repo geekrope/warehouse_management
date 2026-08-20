@@ -34,6 +34,9 @@ const LOCALES = {
         category_title_label: "МАСТЬ",
         category_weight_label: "ВЕС",
         weight: "ВЕС {weight} г",
+        header_box_add: "ДОБАВИТЬ ХАТУ",
+        label_add_box: "РАНГ №",
+        add_box_btn: "ДОБАВИТЬ ХАТУ",
 
         page_title_restore: "КУБЫШКА",
         header_restore: "КОНСПИРАТИВНАЯ ХАТА",
@@ -101,6 +104,9 @@ const LOCALES = {
         category_title_label: "CATEGORY",
         category_weight_label: "WEIGHT",
         weight: "WEIGHT {weight} g",
+        header_box_add: "ADD NEW BOX",
+        label_add_box: "BOX NUMBER №",
+        add_box_btn: "ADD BOX",
 
         page_title_restore: "BACKUP",
         header_restore: "DATA MANAGEMENT",
@@ -168,6 +174,9 @@ const LOCALES = {
         category_title_label: "РОДЪ",
         category_weight_label: "ВЕС",
         weight: "ВЕС {weight} г",
+        header_box_add: "УСТАНОВИТИ ПОЛКУ",
+        label_add_box: "ПОРЯДОК №",
+        add_box_btn: "ДОБАВИТИ ПОЛКУ",
 
         page_title_restore: "КЛАДОВАЯ ПАМЯТИ",
         header_restore: "РАСПОРЯЖЕНIЕ ДОБРОМЪ",
@@ -235,6 +244,9 @@ const LOCALES = {
         category_title_label: "КАТЕГОРИЯ",
         category_weight_label: "ВЕС",
         weight: "ВЕС {weight} г",
+        header_box_add: "ДОБАВИТЬ НОВУЮ ЯЧЕЙКУ",
+        label_add_box: "НОВАЯ ЯЧЕЙКА №",
+        add_box_btn: "ДОБАВИТЬ ЯЧЕЙКУ",
 
         page_title_restore: "РЕЗЕРВНОЕ КОПИРОВАНИЕ",
         header_restore: "УПРАВЛЕНИЕ ДАННЫМИ",

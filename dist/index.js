@@ -1,16 +1,48 @@
 import { SqlJsDriver } from "./db_driver.js";
 import { DatabaseManager } from "./main.js";
-import { add_log_entry } from "./dom_utils.js";
-import { renderPattern } from "./vocab.js";
 import { IndexedDbAdapter } from "./persistence.js";
 import { init_intake, refresh_intake } from "./intake.js";
 import { init_item_management, refresh_item_management } from "./item_management.js";
 import { init_backup } from "./backup.js";
+import { get_element } from "./dom_utils.js";
 import { init_boxes_management, refresh_boxes_management } from "./boxes_management.js";
 import { init_category_management, refresh_category_management } from "./category_management.js";
 import {} from "./types.js";
+const navigate_action = new Map([
+    ["intake", refresh_intake],
+    ["item_management", refresh_item_management],
+    ["boxes_management", refresh_boxes_management],
+    ["category_management", refresh_category_management],
+    ["backup", () => { }],
+    ["stats", () => { }]
+]);
 let db_manager = undefined;
 let categories = [];
+function setup_navigation() {
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const page = tab.getAttribute('data-page');
+            navigate_to(page);
+        });
+    });
+}
+export async function navigate_to(page) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('location', page);
+    window.history.pushState({}, '', url);
+    await handle_navigation();
+}
+export async function handle_navigation() {
+    const page = (new URL(window.location.href)).searchParams.get('location') ?? "intake";
+    const action = navigate_action.get(page);
+    if (!action)
+        throw new Error(`No action defined for page: ${page}`);
+    await action();
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll(`.nav-tab[data-page="${page}"]`).forEach(tab => tab.classList.add('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    get_element(page).classList.add('active');
+}
 export function get_db_manager() {
     if (!db_manager) {
         throw new Error("Database manager not initialized");
@@ -26,15 +58,10 @@ export function get_category_titles() {
 export function locate_category(category_title) {
     return categories.find(cat => cat.title === category_title);
 }
-// TODO: reinitialize each page when focus is regained
-export async function refresh() {
-    if (!db_manager)
-        return;
+export async function reload_categories() {
+    db_manager = get_db_manager();
     categories = await db_manager.get_categories();
-    await refresh_item_management();
-    refresh_category_management();
-    refresh_intake();
-    await refresh_boxes_management();
+    return categories;
 }
 export async function main() {
     try {
@@ -49,26 +76,17 @@ export async function main() {
         db_manager = new DatabaseManager(driver);
         await driver.enable_foreign_keys();
         await db_manager.init_tables();
-        categories = await db_manager.get_categories();
+        await reload_categories();
         init_backup();
         init_intake();
         init_item_management();
         init_boxes_management();
         init_category_management();
-        await refresh();
-        add_log_entry(renderPattern("initial_log"), "intakeLog");
-        add_log_entry(renderPattern("initial_log"), "storageLog");
-        add_log_entry(renderPattern("initial_log"), "categoriesLog");
-        add_log_entry(renderPattern("initial_log"), "backupLog");
-        console.log(db.exec("SELECT * FROM items;"));
-        console.log(db.exec("SELECT * FROM categories;"));
+        setup_navigation();
+        await handle_navigation();
     }
     catch (error) {
         console.error("Failed to initialize database:", error);
-        add_log_entry(renderPattern("initial_log_fail"), "intakeLog", true);
-        add_log_entry(renderPattern("initial_log_fail"), "storageLog", true);
-        add_log_entry(renderPattern("initial_log_fail"), "categoriesLog", true);
-        add_log_entry(renderPattern("initial_log_fail"), "backupLog", true);
     }
 }
 //# sourceMappingURL=index.js.map

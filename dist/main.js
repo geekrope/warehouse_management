@@ -141,6 +141,9 @@ export class DatabaseManager {
             FROM box_adjacency;`, (obj) => { return { v: obj.v, u: obj.u }; });
         return edges;
     }
+    async add_box(box_id) {
+        await this.db_driver.run(`INSERT INTO boxes (id) VALUES (:box_id);`, { ":box_id": box_id });
+    }
     async add_box_connections(adjacency) {
         if (adjacency.length === 0)
             return;

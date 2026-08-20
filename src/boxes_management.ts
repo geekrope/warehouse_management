@@ -1,5 +1,5 @@
-import { add_log_entry, empty_container, get_element } from "./dom_utils.js";
-import { get_db_manager, refresh } from "./index.js";
+import { add_log_entry, empty_container, get_element, DynamicForm } from "./dom_utils.js";
+import { get_db_manager } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { Item } from "./types.js";
 import { dijkstra, build_graph, type AdjacencyList, type Vertex, detect_cycle } from "./graph_utils.js";
@@ -97,7 +97,7 @@ export class BoxElement {
                     "boxesLog"
                 );
 
-                await refresh();
+                await refresh_boxes_management();
             } catch (err) {
                 console.error("Failed to move item to box:", err);
                 add_log_entry(
@@ -129,7 +129,7 @@ async function add_edge(this: { adjacency: AdjacencyList, boxes: number[], weigh
 
     try {
         await get_db_manager().add_box_connections([{ v, u }]);
-        await refresh();
+        await refresh_boxes_management();
 
         callback(edgeData);
     } catch (err) {
@@ -146,7 +146,7 @@ async function delete_edge(edgeData: any, callback: any) {
                 await get_db_manager().remove_box_connection(Number(edge.from), Number(edge.to));
             }
         }
-        await refresh();
+        await refresh_boxes_management();
         callback(edgeData);
     } catch (err) {
         console.error("An error occurred while deleting the edge:", err);
@@ -480,6 +480,23 @@ export async function refresh_boxes_management(): Promise<void> {
 }
 
 export function init_boxes_management(): void {
+    const form = new DynamicForm([
+        {
+            name: "boxNumber",
+            type: "number",
+            label: renderPattern("label_add_box"),
+            required: true
+        }], renderPattern("add_box_btn"), async (values) => {
+            const number = Number(values["boxNumber"]);
+            const manager = get_db_manager();
+
+            if (isNaN(number)) throw new Error("Box number field is not initialized");
+            await manager.add_box(number);
+            await refresh_boxes_management();
+        });
+    const form_container = get_element<HTMLDivElement>("boxAddCard");
+    form_container.appendChild(form.form);
+
     add_log_entry(renderPattern("initial_log"), "boxesLog");
 
     document.addEventListener("dragover", (e: DragEvent) => {
@@ -504,4 +521,6 @@ export function init_boxes_management(): void {
             }, 50);
         });
     }
+
+    add_log_entry(renderPattern("initial_log"), "boxesLog");
 }

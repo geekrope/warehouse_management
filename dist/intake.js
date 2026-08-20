@@ -1,5 +1,5 @@
 import { add_log_entry, get_element, DynamicForm, CategoryInput } from "./dom_utils.js";
-import { get_db_manager, refresh, get_category_titles } from "./index.js";
+import { get_db_manager, get_category_titles } from "./index.js";
 import { renderPattern } from "./vocab.js";
 import { Item } from "./types.js";
 let intake_form = undefined;
@@ -35,7 +35,7 @@ async function add_item() {
         const item = new Item(category, expiry_date.getTime(), box_number, status);
         await manager.add_items(item);
         log_item_addition(true, item);
-        await refresh();
+        await refresh_intake();
     }
     catch (error) {
         console.error("Failed to add item:", error);
@@ -77,6 +77,7 @@ export function init_intake() {
     });
     intake_form.form.id = "intakeForm";
     intakeCard.appendChild(intake_form.form);
+    add_log_entry(renderPattern("initial_log"), "intakeLog");
 }
 export function refresh_intake() {
     const category_field = intake_form?.get_field("categoryInput");
