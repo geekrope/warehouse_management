@@ -1,7 +1,9 @@
 import type { IDatabaseDriver, SqlParams } from "./db_driver.js";
 import { Item } from "./types.js";
-import { type Category } from "./types.js";
+import { type Category, type Box } from "./types.js";
 import { type AdjacencyList } from "./graph_utils.js";
+
+//TODO: DRY
 
 export class DatabaseManager {
     constructor(private db_driver: IDatabaseDriver) { }
@@ -16,7 +18,10 @@ export class DatabaseManager {
         );
         await this.db_driver.run(
             `CREATE TABLE IF NOT EXISTS boxes (
-            id INTEGER PRIMARY KEY)`
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL UNIQUE,
+            max_load INTEGER DEFAULT NULL,
+            deleted BOOLEAN NOT NULL DEFAULT 0);`
         );
         await this.db_driver.run(
             `CREATE TABLE IF NOT EXISTS items (
@@ -38,38 +43,28 @@ export class DatabaseManager {
             FOREIGN KEY (u) REFERENCES boxes(id),
             PRIMARY KEY (v, u));`
         );
-        await this.db_driver.run(
-            `CREATE TRIGGER IF NOT EXISTS box_emplace_insert
-            BEFORE INSERT ON items
-            FOR EACH ROW
-            WHEN (SELECT COUNT(*) FROM boxes WHERE id = NEW.box_id) = 0
-            BEGIN
-                INSERT INTO boxes (id) VALUES (NEW.box_id);
-            END;`
-        );
-        await this.db_driver.run(
-            `CREATE TRIGGER IF NOT EXISTS box_emplace_update
-            BEFORE UPDATE ON items
-            FOR EACH ROW
-            WHEN (SELECT COUNT(*) FROM boxes WHERE id = NEW.box_id) = 0
-            BEGIN
-                INSERT INTO boxes (id) VALUES (NEW.box_id);
-            END;`
-        );
     }
 
-    public async get_category_ids(...categories: string[]): Promise<Map<string, number>> {
-        categories = Array.from(new Set(categories));
+    private async id_lookup(map: Map<string, number>, title: string): Promise<number> {
+        const id = map.get(title);
+        if (id === undefined) {
+            throw new Error(`The object with title "${title}" does not exist.`);
+        }
+        return id;
+    }
 
-        if (categories.length === 0) return new Map<string, number>();
+    public async get_ids(table_name: string, ...titles: string[]): Promise<Map<string, number>> {
+        titles = Array.from(new Set(titles));
 
-        const where_clause = categories.map(() => "?").join(", ");
+        if (titles.length === 0) return new Map<string, number>();
+
+        const where_clause = titles.map(() => "?").join(", ");
         const category_ids = await this.db_driver.query<{ key: string, value: number }>(
             `SELECT title, id 
-            FROM categories 
+            FROM ${table_name} 
             WHERE title IN (${where_clause}) AND deleted = 0;`,
             (obj: any) => { return { key: obj.title, value: obj.id }; },
-            categories
+            titles
         );
 
         return new Map(category_ids.map(({ key, value }) => [key, value]));
@@ -126,14 +121,21 @@ export class DatabaseManager {
     public async add_items(...item: Item[]): Promise<void> {
         if (item.length === 0) return;
 
-        const category_map = await this.get_category_ids(...item.map(i => i.category));
+        const category_map = await this.get_ids("categories", ...item.map(i => i.category));
         for (const i of item) {
             if (!category_map.has(i.category)) {
                 throw new Error(`Category "${i.category}" does not exist.`);
             }
         }
 
-        const flattened_values = item.flatMap(i => [category_map.get(i.category), i.box_id, i.expiration_date, i.status, Date.now()]);
+        const box_map = await this.get_ids("boxes", ...item.map(i => i.box));
+        for (const i of item) {
+            if (!box_map.has(i.box)) {
+                throw new Error(`Box "${i.box}" does not exist.`);
+            }
+        }
+
+        const flattened_values = item.flatMap(i => [category_map.get(i.category), box_map.get(i.box), i.expiration_date, i.status, Date.now()]);
         const clause = item.map(() => "(?, ?, ?, ?, ?)").join(", ");
         await this.db_driver.run(
             `INSERT INTO items 
@@ -153,16 +155,17 @@ export class DatabaseManager {
     }
 
     public async update_item(id: number, args: Partial<Item>): Promise<void> {
-        const { category, id: _id, ...rest } = args;
+        const { category, box, id: _id, ...rest } = args;
         const update_obj: Record<string, any> = { ...rest };
 
         if (category !== undefined) {
-            const category_map = await this.get_category_ids(category);
-            const category_id = category_map.get(category);
-            if (category_id === undefined) {
-                throw new Error(`Category "${category}" does not exist.`);
-            }
-            update_obj["category_id"] = category_id;
+            const category_map = await this.get_ids(category);            
+            update_obj["category_id"] = await this.id_lookup(category_map, category);
+        }
+
+        if(box !== undefined) {
+            const box_map = await this.get_ids("boxes", box);
+            update_obj["box_id"] = await this.id_lookup(box_map, box);
         }
 
         const entries = Object.entries(update_obj).filter(
@@ -194,52 +197,75 @@ export class DatabaseManager {
             { ":category": category });
     }
 
-    public async get_boxes(): Promise<number[]> {
-        return await this.db_driver.query<number>(
-            `SELECT id AS box_id
+    public async get_boxes(): Promise<Box[]> {
+        return await this.db_driver.query<Box>(
+            `SELECT title, max_load
             FROM boxes
-            ORDER BY box_id ASC;`,
-            (obj: any) => obj.box_id as number,
+            WHERE deleted = 0
+            ORDER BY title ASC;`,
+            (obj: any) => { return { title: obj.title as string, max_load: isNaN(Number(obj.max_load)) ? null : Number(obj.max_load) }; }
         );
     }
 
-    public async get_box_weights(): Promise<{ box_id: number, total_weight: number }[]> {
-        return await this.db_driver.query<{ box_id: number, total_weight: number }>(
-            `SELECT B.id as box_id, SUM(COALESCE(C.weight, 0)) AS total_weight
-            FROM boxes AS B
-            LEFT JOIN items AS I ON B.id = I.box_id AND I.remove_date IS NULL
-            LEFT JOIN categories AS C ON I.category_id = C.id
-            GROUP BY B.id`,
-            (obj: any) => { return { box_id: obj.box_id as number, total_weight: obj.total_weight as number }; }
+    public async add_boxes(...boxes: Box[]): Promise<void> {
+        const values_clause = boxes.map(() => "(?, ?)").join(", ");
+        const values = boxes.flatMap(box => [box.title, box.max_load]);
+
+        await this.db_driver.run(
+            `INSERT INTO boxes 
+            (title, max_load) 
+            VALUES ${values_clause}
+            ON CONFLICT (title) DO UPDATE
+            SET deleted = 0,
+                max_load = excluded.max_load;`,
+            values
         );
     }
 
-    public async get_box_content(box_id: number): Promise<Item[]> {
-        return await this.db_driver.query<Item>(
-            `SELECT I.*, C.title AS category
+    public async remove_box(box: string): Promise<void> {
+        const no_linking_items = await this.db_driver.query<number>(
+            `SELECT COUNT(*) AS count 
             FROM items AS I
+            WHERE I.box_id = (SELECT id FROM boxes WHERE title = :box)
+            AND I.remove_date IS NULL;`,
+            (obj: any) => obj.count as number,
+            { ":box": box }
+        );
+
+        if (no_linking_items[0] == 0) {
+            await this.db_driver.run(
+                `UPDATE boxes
+                SET deleted = 1
+                WHERE title = :box;`,
+                { ":box": box }
+            );
+        }
+        else {
+            throw new Error(`Cannot delete box "${box}" because it is linked to existing items.`);
+        }
+    }
+
+    public async get_box_weights(): Promise<{ box: string, total_weight: number }[]> {
+        return await this.db_driver.query<{ box: string, total_weight: number }>(
+            `SELECT B.title as box, SUM(COALESCE(C.weight, 0)) AS total_weight
+            FROM boxes AS B
+            JOIN items AS I ON B.id = I.box_id AND I.remove_date IS NULL
             JOIN categories AS C ON I.category_id = C.id
-            WHERE I.box_id = :box_id AND I.remove_date IS NULL
+            GROUP BY B.id`,
+            (obj: any) => { return { box: obj.box as string, total_weight: obj.total_weight as number }; }
+        );
+    }
+
+    public async get_box_content(box: string): Promise<Item[]> {
+        return await this.db_driver.query<Item>(
+            `SELECT I.*, B.title as box, C.title AS category
+            FROM items AS I
+            LEFT JOIN categories AS C ON I.category_id = C.id
+            LEFT JOIN boxes AS B ON I.box_id = B.id
+            WHERE B.title = :box AND I.remove_date IS NULL
             ORDER BY C.title;`,
             Item.from,
-            { ":box_id": box_id }
-        );
-    }
-
-    public async get_box_adjacency(): Promise<AdjacencyList> {
-        const edges = await this.db_driver.query<{ v: number, u: number }>(
-            `SELECT v, u
-            FROM box_adjacency;`,
-            (obj: any) => { return { v: obj.v as number, u: obj.u as number }; }
-        );
-
-        return edges;
-    }
-
-    public async add_box(box_id: number): Promise<void> {
-        await this.db_driver.run(
-            `INSERT INTO boxes (id) VALUES (:box_id);`,
-            { ":box_id": box_id }
+            { ":box": box }
         );
     }
 
@@ -264,16 +290,14 @@ export class DatabaseManager {
         );
     }
 
-    public async get_snapshot(threshold: number): Promise<{ category: string, count: number }[]> {
-        return await this.db_driver.query<{ category: string, count: number }>(
-            `SELECT C.title as title, COUNT(*) AS count
-            FROM items AS I
-            JOIN categories AS C ON I.category_id = C.id
-            WHERE I.add_date <= :threshold AND (I.remove_date IS NULL OR I.remove_date > :threshold)
-            GROUP BY C.title;`,
-            (obj: any) => ({ category: obj.title as string, count: obj.count as number }),
-            { ":threshold": threshold }
+    public async get_box_adjacency(): Promise<AdjacencyList> {
+        const edges = await this.db_driver.query<{ v: number, u: number }>(
+            `SELECT v, u
+            FROM box_adjacency;`,
+            (obj: any) => { return { v: obj.v as number, u: obj.u as number }; }
         );
+
+        return edges;
     }
 
     public async execute_raw(sql: string, params: SqlParams): Promise<any[]> {

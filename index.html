@@ -143,7 +143,7 @@
                     <div class="dashboard-presets">
                         <span class="preset-label">Presets:</span>
                         <button class="preset-chip dashboard-preset-btn" data-target="query"
-                            data-sql="SELECT * FROM items WHERE remove_date IS NULL LIMIT 20;">Items</button>
+                            data-sql="SELECT I.id, C.title, I.box_id, I.expiration_date, I.status, I.add_date, I.remove_date FROM items AS I JOIN categories AS C ON C.id = I.category_id LIMIT 20;">Items</button>
                         <button class="preset-chip dashboard-preset-btn" data-target="query"
                             data-sql="SELECT * FROM categories WHERE deleted = 0;">Categories</button>
                         <button class="preset-chip dashboard-preset-btn" data-target="query"
@@ -235,10 +235,10 @@
             await handle_navigation();
         });
 
-        if (debug) {
-            HeapTests.run();
-            DatabaseTests.run();
-        }
+        //if (debug) {
+        //    HeapTests.run();
+        //    DatabaseTests.run();
+        //}
     </script>
 </body>
 

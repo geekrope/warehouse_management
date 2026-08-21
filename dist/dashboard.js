@@ -99,6 +99,10 @@ async function execute_read_query() {
                     if (cell === null || cell === undefined) {
                         td.innerHTML = `<span class="cell-null">NULL</span>`;
                     }
+                    else if (res.columns[tr.children.length].toLowerCase().includes("date") && typeof cell === "number") {
+                        const date = new Date(cell);
+                        td.textContent = date.toLocaleDateString();
+                    }
                     else if (typeof cell === "boolean") {
                         td.innerHTML = `<span class="cell-bool">${cell ? "TRUE" : "FALSE"}</span>`;
                     }

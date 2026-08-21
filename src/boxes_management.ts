@@ -13,7 +13,7 @@ export class BoxElement {
     private items_list_container: HTMLDivElement;
 
     constructor(
-        public box_id: number,
+        public box: string,
         public box_weight: number,
         item_elements: HTMLElement[] = []
     ) {
@@ -25,7 +25,7 @@ export class BoxElement {
 
         const title = document.createElement("span");
         title.className = "box-title";
-        title.textContent = `📦 ${renderPattern("box")} ${box_id}, ${renderPattern("weight", { "weight": box_weight })}`;
+        title.textContent = `📦 ${renderPattern("box")} ${box}, ${renderPattern("weight", { "weight": box_weight })}`;
 
         const badge = document.createElement("span");
         badge.className = "count-badge";
@@ -87,12 +87,12 @@ export class BoxElement {
 
             try {
                 const manager = get_db_manager();
-                await manager.update_item(item.id, { box_id: this.box_id });
+                await manager.update_item(item.id, { box: this.box });
 
                 add_log_entry(
                     renderPattern("log_move", {
                         meta: repr(item),
-                        box: this.box_id
+                        box: this.box
                     }),
                     "boxesLog"
                 );
@@ -103,7 +103,7 @@ export class BoxElement {
                 add_log_entry(
                     renderPattern("log_move_fail", {
                         meta: repr(item),
-                        box: this.box_id
+                        box: this.box
                     }),
                     "boxesLog",
                     true

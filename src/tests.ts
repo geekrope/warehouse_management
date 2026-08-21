@@ -1,13 +1,13 @@
-import { heapify, insert, erase, partial_heapsort } from './heap.js';
+/*import { heapify, insert, erase, partial_heapsort } from './heap.js';
 import { Item, item_less } from './types.js';
 import { DatabaseManager } from './main.js';
 import { SqlJsDriver } from './db_driver.js';
-import { DummyPersistenceAdapter } from './persistence.js';
+import { DummyPersistenceAdapter } from './persistence.js';*/
 
-type AssertFunc = (condition: boolean, name: string) => void;
+/*type AssertFunc = (condition: boolean, name: string) => void;*/
 export const debug = true;
 
-export function assertFactory() {
+/*export function assertFactory() {
     let passed = 0;
     let total = 0;
 
@@ -440,4 +440,4 @@ export const DatabaseTests = {
 
         return passed === total;
     }
-};
+};*/

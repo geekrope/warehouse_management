@@ -8,6 +8,8 @@ import { dijkstra, build_graph, type AdjacencyList } from "./graph_utils.js";
 
 const page_size: number = 5;
 
+//TODO: think if storing the full category is necessary, or if just the title is enough
+
 let storage_category_input: CategoryInput | undefined = undefined;
 let heap_ptr = -1;
 let pages: Item[][] = [];
