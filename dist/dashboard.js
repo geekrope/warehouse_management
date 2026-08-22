@@ -6,6 +6,13 @@ function updateHighlight(code_block, input) {
     code_block.removeAttribute('data-highlighted');
     hljs.highlightElement(code_block);
 }
+function render_status(container, message, is_error) {
+    const status = document.createElement("div");
+    status.className = is_error ? "query-status error" : "query-status success";
+    status.textContent = message;
+    container.textContent = "";
+    container.appendChild(status);
+}
 export function init_dashboard() {
     const query_editor = get_element("queryEditor");
     const query_editor_input = get_element("queryEditorInput");
@@ -27,26 +34,26 @@ export function init_dashboard() {
     });
     const clearQueryBtn = get_element("clearSelectBtn");
     clearQueryBtn.addEventListener("click", () => {
-        query_editor.innerHTML = "";
+        query_editor.textContent = "";
         const resultsContainer = get_element("queryResultsContainer");
-        resultsContainer.innerHTML = "";
+        resultsContainer.textContent = "";
     });
     const clearMutationBtn = get_element("clearMutationBtn");
     clearMutationBtn.addEventListener("click", () => {
-        mutation_editor.innerHTML = "";
+        mutation_editor.textContent = "";
         const statusContainer = get_element("mutationStatusContainer");
-        statusContainer.innerHTML = "";
+        statusContainer.textContent = "";
     });
     document.querySelectorAll(".dashboard-preset-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             const sql = btn.getAttribute("data-sql");
             const target = btn.getAttribute("data-target");
             if (sql && target === "query" && query_editor) {
-                query_editor_input.innerText = sql;
+                query_editor_input.textContent = sql;
                 updateHighlight(query_editor, query_editor_input);
             }
             else if (sql && target === "mutation" && mutation_editor) {
-                mutation_editor_input.innerHTML = sql;
+                mutation_editor_input.textContent = sql;
                 updateHighlight(mutation_editor, mutation_editor_input);
             }
         });
@@ -68,7 +75,7 @@ async function execute_read_query() {
         const manager = get_db_manager();
         const results = await manager.execute_raw(sql, []);
         const elapsed = (performance.now() - start_time).toFixed(2);
-        resultsContainer.innerHTML = "";
+        resultsContainer.textContent = "";
         if (results.length === 0) {
             add_log_entry(`Query executed successfully (${elapsed} ms, 0 rows)`, "dashboardLog");
             return;
@@ -97,14 +104,14 @@ async function execute_read_query() {
                 for (const cell of row) {
                     const td = document.createElement("td");
                     if (cell === null || cell === undefined) {
-                        td.innerHTML = `<span class="cell-null">NULL</span>`;
+                        const null_span = document.createElement("span");
+                        null_span.className = "cell-null";
+                        null_span.textContent = "NULL";
+                        td.appendChild(null_span);
                     }
                     else if (res.columns[tr.children.length].toLowerCase().includes("date") && typeof cell === "number") {
                         const date = new Date(cell);
                         td.textContent = date.toLocaleDateString();
-                    }
-                    else if (typeof cell === "boolean") {
-                        td.innerHTML = `<span class="cell-bool">${cell ? "TRUE" : "FALSE"}</span>`;
                     }
                     else {
                         td.textContent = String(cell);
@@ -120,14 +127,14 @@ async function execute_read_query() {
         add_log_entry(`Read query success (${elapsed} ms)`, "dashboardLog");
     }
     catch (err) {
-        resultsContainer.innerHTML = `<div class="query-status error">Error: ${err.message || String(err)}</div>`;
+        render_status(resultsContainer, `Error: ${err.message || String(err)}`, true);
         add_log_entry(`Query error: ${err.message || String(err)}`, "dashboardLog", true);
     }
 }
 // TODO: Commit the state and add rollback functionality for mutation queries.
 async function execute_mutation_query() {
     const mutation_editor = get_element("mutationEditorInput");
-    const sql = mutation_editor.innerHTML;
+    const sql = mutation_editor.textContent ?? "";
     const statusContainer = get_element("mutationStatusContainer");
     if (!sql) {
         add_log_entry("Mutation statement cannot be empty", "dashboardLog", true);
@@ -139,11 +146,11 @@ async function execute_mutation_query() {
         await manager.run_raw(sql, []);
         const elapsed = (performance.now() - start_time).toFixed(2);
         await reload_categories();
-        statusContainer.innerHTML = `<div class="query-status success">Mutation executed and saved in ${elapsed} ms. Foreign keys enforced.</div>`;
+        render_status(statusContainer, `Mutation executed and saved in ${elapsed} ms. Foreign keys enforced.`, false);
         add_log_entry(`Mutation success (${elapsed} ms): ${sql.substring(0, 60)}...`, "dashboardLog");
     }
     catch (err) {
-        statusContainer.innerHTML = `<div class="query-status error">Execution failed: ${err.message || String(err)}</div>`;
+        render_status(statusContainer, `Execution failed: ${err.message || String(err)}`, true);
         add_log_entry(`Mutation error: ${err.message || String(err)}`, "dashboardLog", true);
     }
 }

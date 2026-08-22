@@ -92,7 +92,7 @@ export class CategoryInput {
     }
 
     public update_datalist(): void {
-        this.datalist.innerHTML = "";
+        this.datalist.textContent = "";
 
         for (const cat of this.categories) {
             const option = document.createElement("option");

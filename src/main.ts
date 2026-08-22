@@ -53,7 +53,7 @@ export class DatabaseManager {
         return id;
     }
 
-    public async get_ids(table_name: string, ...titles: string[]): Promise<Map<string, number>> {
+    private async get_ids(table_name: string, ...titles: string[]): Promise<Map<string, number>> {
         titles = Array.from(new Set(titles));
 
         if (titles.length === 0) return new Map<string, number>();
@@ -70,26 +70,30 @@ export class DatabaseManager {
         return new Map(category_ids.map(({ key, value }) => [key, value]));
     }
 
-    public async add_categories(...categories: Category[]): Promise<void> {
-        const values_clause = categories.map(() => "(?, ?)").join(", ");
-        const values = categories.flatMap(cat => [cat.title, cat.weight]);
+    private async add_objects(table_name: string, objects: { title: string }[]): Promise<void> {
+        const properties = Object.keys(objects[0]);
+        const id_loc = properties.indexOf("id");
+        if (id_loc !== -1) properties.splice(id_loc, 1);
+        const values_clause = objects.map(() => `(${properties.map(() => "?").join(", ")})`).join(", ");
+        const values = objects.flatMap(obj => properties.map(prop => (obj as any)[prop]));
+        const set_clause = properties.map(prop => `${prop} = excluded.${prop}`).join(", ");
 
         await this.db_driver.run(
-            `INSERT INTO categories 
-            (title, weight) 
+            `INSERT INTO ${table_name} 
+            (${properties.join(", ")}) 
             VALUES ${values_clause}
             ON CONFLICT (title) DO UPDATE
             SET deleted = 0,
-                weight = excluded.weight;`,
+                ${set_clause};`,
             values
         );
     }
 
-    public async remove_category(title: string): Promise<void> {
+    private async remove_object(table_name: string, title: string, dependent_identifier: string): Promise<void> {
         const no_linking_items = await this.db_driver.query<number>(
             `SELECT COUNT(*) AS count 
             FROM items AS I
-            WHERE I.category_id = (SELECT id FROM categories WHERE title = :title)
+            WHERE I.${dependent_identifier} = (SELECT id FROM ${table_name} WHERE title = :title)
             AND I.remove_date IS NULL;`,
             (obj: any) => obj.count as number,
             { ":title": title }
@@ -97,24 +101,32 @@ export class DatabaseManager {
 
         if (no_linking_items[0] == 0) {
             await this.db_driver.run(
-                `UPDATE categories
+                `UPDATE ${table_name}
                 SET deleted = 1
                 WHERE title = :title;`,
                 { ":title": title }
             );
         }
         else {
-            throw new Error(`Cannot delete category "${title}" because it is linked to existing items.`);
+            throw new Error(`Cannot delete object "${title}" because it is linked to existing items.`);
         }
+    }
+
+    public async add_categories(...categories: Category[]): Promise<void> {
+        this.add_objects("categories", categories);
+    }
+
+    public async remove_category(title: string): Promise<void> {
+        this.remove_object("categories", title, "category_id");
     }
 
     public async get_categories(): Promise<Category[]> {
         return await this.db_driver.query<Category>(
-            `SELECT title, weight 
+            `SELECT id, title, weight 
             FROM categories 
             WHERE deleted = 0
             ORDER BY title ASC;`,
-            (obj: any) => { return { title: obj.title as string, weight: obj.weight as number | null } }
+            (obj: any) => { return { id: obj.id as number, title: obj.title as string, weight: obj.weight as number | null } }
         );
     }
 
@@ -159,11 +171,11 @@ export class DatabaseManager {
         const update_obj: Record<string, any> = { ...rest };
 
         if (category !== undefined) {
-            const category_map = await this.get_ids(category);            
+            const category_map = await this.get_ids(category);
             update_obj["category_id"] = await this.id_lookup(category_map, category);
         }
 
-        if(box !== undefined) {
+        if (box !== undefined) {
             const box_map = await this.get_ids("boxes", box);
             update_obj["box_id"] = await this.id_lookup(box_map, box);
         }
@@ -188,9 +200,10 @@ export class DatabaseManager {
 
     public async get_items(category: string): Promise<Item[]> {
         return await this.db_driver.query<Item>(
-            `SELECT I.*, C.title AS category
+            `SELECT I.*, B.title as box, C.title AS category
             FROM items AS I
-            LEFT JOIN categories as C ON I.category_id = C.id 
+            LEFT JOIN categories AS C ON I.category_id = C.id 
+            LEFT JOIN boxes AS B ON I.box_id = B.id
             WHERE C.title = :category
             AND remove_date IS NULL;`,
             Item.from,
@@ -199,50 +212,26 @@ export class DatabaseManager {
 
     public async get_boxes(): Promise<Box[]> {
         return await this.db_driver.query<Box>(
-            `SELECT title, max_load
+            `SELECT id, title, max_load
             FROM boxes
             WHERE deleted = 0
             ORDER BY title ASC;`,
-            (obj: any) => { return { title: obj.title as string, max_load: isNaN(Number(obj.max_load)) ? null : Number(obj.max_load) }; }
+            (obj: any) => { return { id: obj.id as number, title: obj.title as string, max_load: isNaN(Number(obj.max_load)) ? null : Number(obj.max_load) }; }
         );
     }
 
     public async add_boxes(...boxes: Box[]): Promise<void> {
-        const values_clause = boxes.map(() => "(?, ?)").join(", ");
-        const values = boxes.flatMap(box => [box.title, box.max_load]);
-
-        await this.db_driver.run(
-            `INSERT INTO boxes 
-            (title, max_load) 
-            VALUES ${values_clause}
-            ON CONFLICT (title) DO UPDATE
-            SET deleted = 0,
-                max_load = excluded.max_load;`,
-            values
-        );
+        this.add_objects("boxes", boxes);
     }
 
     public async remove_box(box: string): Promise<void> {
-        const no_linking_items = await this.db_driver.query<number>(
-            `SELECT COUNT(*) AS count 
-            FROM items AS I
-            WHERE I.box_id = (SELECT id FROM boxes WHERE title = :box)
-            AND I.remove_date IS NULL;`,
-            (obj: any) => obj.count as number,
+        this.remove_object("boxes", box, "box_id");
+        this.db_driver.run(
+            `DELETE FROM box_adjacency 
+            WHERE v = (SELECT id FROM boxes WHERE title = :box) 
+            OR u = (SELECT id FROM boxes WHERE title = :box);`,
             { ":box": box }
-        );
-
-        if (no_linking_items[0] == 0) {
-            await this.db_driver.run(
-                `UPDATE boxes
-                SET deleted = 1
-                WHERE title = :box;`,
-                { ":box": box }
-            );
-        }
-        else {
-            throw new Error(`Cannot delete box "${box}" because it is linked to existing items.`);
-        }
+        ); // cascade delete box connections
     }
 
     public async get_box_weights(): Promise<{ box: string, total_weight: number }[]> {

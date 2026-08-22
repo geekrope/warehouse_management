@@ -1,12 +1,10 @@
 import { add_log_entry, empty_container, get_element, DynamicForm } from "./dom_utils.js";
-import { get_db_manager } from "./index.js";
+import { get_db_manager, reload_boxes, get_box_titles } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
-import { Item } from "./types.js";
-import { dijkstra, build_graph, type AdjacencyList, type Vertex, detect_cycle } from "./graph_utils.js";
+import { Item, type Box } from "./types.js";
+import { refresh_boxes_graph, init_boxes_graph } from "./boxes_graph.js";
 
-declare const vis: any;
-
-let network_instance: any = null;
+//TODO: think if add/amend button should be added. same applies to categories management
 
 export class BoxElement {
     public container: HTMLDivElement;
@@ -111,211 +109,6 @@ export class BoxElement {
             }
         });
     }
-}
-
-async function add_edge(this: { adjacency: AdjacencyList, boxes: number[], weights: Map<number, number> }, edgeData: any, callback: any): Promise<void> {
-    const v = Number(edgeData.from);
-    const u = Number(edgeData.to);
-
-    const staged = [...this.adjacency, { v, u }];
-    const labels = this.boxes.map((box) => { return [box, 0] as [Vertex, number]; });
-    const has_cycle = detect_cycle(build_graph(this.boxes, this.weights, staged), new Map<Vertex, number>(labels), v);
-
-    if (has_cycle) {
-        callback(null);
-        console.log("Adding this edge would create a cycle. Operation canceled.");
-        return;
-    }
-
-    try {
-        await get_db_manager().add_box_connections([{ v, u }]);
-        await refresh_boxes_management();
-
-        callback(edgeData);
-    } catch (err) {
-        console.error("An error occurred while adding the edge:", err);
-        callback(null);
-    }
-}
-
-async function delete_edge(edgeData: any, callback: any) {
-    try {
-        for (const edgeId of edgeData.edges) {
-            const edge = network_instance.body.data.edges.get(edgeId);
-            if (edge) {
-                await get_db_manager().remove_box_connection(Number(edge.from), Number(edge.to));
-            }
-        }
-        await refresh_boxes_management();
-        callback(edgeData);
-    } catch (err) {
-        console.error("An error occurred while deleting the edge:", err);
-        callback(null);
-    }
-}
-
-export function render_box_graph(
-    container: HTMLElement,
-    boxes: number[],
-    weights: Map<number, number>,
-    adjacency: AdjacencyList
-) {
-    if (typeof vis === "undefined") throw Error("vis-network library is not loaded.");
-
-    container.innerHTML = "";
-
-    if (boxes.length === 0) {
-        container.appendChild(empty_container());
-        return;
-    }
-
-    const graph = build_graph(boxes, weights, adjacency);
-    const access_scores = dijkstra(graph, "start");
-
-    const all_nodes_set = new Set<number>(boxes);
-    for (const { v, u } of adjacency) {
-        if (boxes.includes(v)) all_nodes_set.add(v);
-        if (boxes.includes(u)) all_nodes_set.add(u);
-    }
-
-    const nodes = Array.from(all_nodes_set).map(id => {
-        const weight = weights.get(id) ?? 0;
-        const access_cost = access_scores.get(id) ?? 0;
-        const is_root = access_cost === 0;
-
-        return {
-            id,
-            label: renderPattern("graph_box_label", {
-                id,
-                weight,
-                cost: access_cost
-            }),
-            shape: "box",
-            margin: 10,
-            color: {
-                background: is_root ? "#27ae60" : "#3498db",
-                border: is_root ? "#1e8449" : "#2980b9",
-                highlight: {
-                    background: "#e67e22",
-                    border: "#d35400"
-                }
-            },
-            font: {
-                color: "#ffffff",
-                face: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                size: 13,
-                bold: { mod: "bold" }
-            }
-        };
-    });
-
-    const edges: { from: number, to: number, label?: string, arrows: string, color?: any }[] = [];
-    for (const { v, u } of adjacency) {
-        if (all_nodes_set.has(v) && all_nodes_set.has(u)) {
-            edges.push({
-                from: v,
-                to: u,
-                arrows: "to",
-                color: { color: "#95a5a6", highlight: "#e67e22" }
-            });
-        }
-    }
-
-    const data = { nodes, edges };
-    const empty_handler = (_param: any, callback: any) => {
-        callback(null);
-        console.log(false, "This handler is disabled");
-    }
-    const options = {
-        layout: {
-            hierarchical: {
-                direction: "UD",
-                sortMethod: "directed"
-            }
-        },
-        physics: {
-            enabled: true,
-            solver: "forceAtlas2Based"
-        },
-        interaction: {
-            hover: true,
-            dragNodes: true,
-            zoomView: true
-        },
-        manipulation: {
-            enabled: true,
-            addNode: false,
-            editEdge: empty_handler,
-            deleteNode: false,
-            addEdge: add_edge.bind({ adjacency, boxes, weights }),
-            deleteEdge: delete_edge
-        }
-    };
-
-    network_instance = new vis.Network(container, data, options);
-}
-
-export function render_weights_table(
-    container: HTMLElement,
-    boxes: number[],
-    weights: Map<number, number>,
-    adjacency: AdjacencyList
-) {
-    container.innerHTML = "";
-
-    if (boxes.length === 0) return;
-
-    const graph = build_graph(boxes, weights, adjacency);
-    const access_scores = dijkstra(graph, "start");
-
-    const sorted_boxes = [...boxes].sort((a, b) => a - b);
-
-    const table = document.createElement("table");
-    table.className = "data-table";
-
-    const thead = document.createElement("thead");
-    const header_tr = document.createElement("tr");
-
-    const th_box = document.createElement("th");
-    th_box.textContent = renderPattern("th_box");
-    const th_weight = document.createElement("th");
-    th_weight.textContent = renderPattern("th_weight");
-    const th_cost = document.createElement("th");
-    th_cost.textContent = renderPattern("th_access_cost");
-
-    header_tr.appendChild(th_box);
-    header_tr.appendChild(th_weight);
-    header_tr.appendChild(th_cost);
-    thead.appendChild(header_tr);
-    table.appendChild(thead);
-
-    const tbody = document.createElement("tbody");
-
-    for (const box_id of sorted_boxes) {
-        const tr = document.createElement("tr");
-
-        const td_box = document.createElement("td");
-        td_box.textContent = `📦 ${renderPattern("box")} ${box_id}`;
-        td_box.style.fontWeight = "600";
-
-        const td_weight = document.createElement("td");
-        td_weight.textContent = `${weights.get(box_id) ?? 0} г`;
-
-        const td_cost = document.createElement("td");
-        const cost = access_scores.get(box_id) ?? 0;
-        const badge = document.createElement("span");
-        badge.className = `badge-cost ${cost === 0 ? "direct" : "blocked"}`;
-        badge.textContent = cost === 0 ? renderPattern("direct_access") : `${cost} г`;
-        td_cost.appendChild(badge);
-
-        tr.appendChild(td_box);
-        tr.appendChild(td_weight);
-        tr.appendChild(td_cost);
-        tbody.appendChild(tr);
-    }
-
-    table.appendChild(tbody);
-    container.appendChild(table);
 }
 
 let drag_autoscroll_active = false;
@@ -440,61 +233,58 @@ export function create_draggable_item_element(item: Item): HTMLElement {
 
 export async function refresh_boxes_management(): Promise<void> {
     const boxes_container = get_element<HTMLDivElement>("boxesContainer");
-    const graph_container = get_element<HTMLDivElement>("boxesGraphContainer");
-    const table_container = get_element<HTMLDivElement>("boxesWeightsTableContainer");
-
-    boxes_container.innerHTML = "";
+    boxes_container.textContent = "";
 
     const manager = get_db_manager();
-    const boxes = await manager.get_boxes();
+    const boxes = await reload_boxes();
     const box_weights = await manager.get_box_weights();
-    const weight_map = new Map<number, number>(box_weights.map(entry => [entry.box_id, entry.total_weight]));
-
-    const zipped_boxes = boxes.map(box_id => {
-        return { box_id, total_weight: weight_map.get(box_id) ?? 0 };
-    });
+    const weight_map = new Map<string, number>(box_weights.map(entry => [entry.box, entry.total_weight]));
 
     if (boxes.length === 0) {
         boxes_container.appendChild(empty_container());
-        if (graph_container) {
-            graph_container.innerHTML = "";
-            graph_container.appendChild(empty_container());
-        }
-        if (table_container) {
-            table_container.innerHTML = "";
-        }
+        await refresh_boxes_graph();
         return;
     }
 
     // Use heap for sorting items by date, status and lexicographicaly by category
-    for (const { box_id, total_weight } of zipped_boxes) {
-        const items = await manager.get_box_content(box_id);
+    for (const box of boxes) {
+        const total_weight = weight_map.get(box.title) ?? 0;
+        const items = await manager.get_box_content(box.title);
         const item_elements = items.map(item => create_draggable_item_element(item));
-        const box_el = new BoxElement(box_id, total_weight, item_elements);
+        const box_el = new BoxElement(box.title, total_weight, item_elements);
         boxes_container.appendChild(box_el.container);
     }
 
-    const box_adjacency_list = await manager.get_box_adjacency();
-
-    render_box_graph(graph_container, boxes, weight_map, box_adjacency_list);
-    render_weights_table(table_container, boxes, weight_map, box_adjacency_list);
+    await refresh_boxes_graph();
 }
 
 export function init_boxes_management(): void {
     const form = new DynamicForm([
         {
-            name: "boxNumber",
+            name: "boxTitle",
+            type: "text",
+            label: renderPattern("box_title_label"),
+            placeholder: renderPattern("box_placeholder")
+        },
+        {
+            name: "maxLoad",
             type: "number",
-            label: renderPattern("label_add_box"),
-            required: true
+            label: renderPattern("label_max_load"),
+            required: false
         }], renderPattern("add_box_btn"), async (values) => {
-            const number = Number(values["boxNumber"]);
+            const title = String(values["boxTitle"] ?? "").trim();
+            const max_load = typeof values["maxLoad"] === "number" && !isNaN(values["maxLoad"]) ? values["maxLoad"] : null;
+
+            if (!title) throw new Error("Box title is not initialized");
+            if (get_box_titles().includes(title)) throw new Error("Box already exists");
+
+            const box: Box = { id: undefined, title, max_load };
             const manager = get_db_manager();
 
-            if (isNaN(number)) throw new Error("Box number field is not initialized");
-            await manager.add_box(number);
+            await manager.add_boxes(box);
             await refresh_boxes_management();
         });
+        
     const form_container = get_element<HTMLDivElement>("boxAddCard");
     form_container.appendChild(form.form);
 
@@ -514,14 +304,5 @@ export function init_boxes_management(): void {
         stop_drag_autoscroll();
     });
 
-    const boxesTab = document.querySelector('[data-page="boxes"]');
-    if (boxesTab) {
-        boxesTab.addEventListener("click", () => {
-            setTimeout(() => {
-                network_instance?.fit();
-            }, 50);
-        });
-    }
-
-    add_log_entry(renderPattern("initial_log"), "boxesLog");
+    init_boxes_graph();
 }

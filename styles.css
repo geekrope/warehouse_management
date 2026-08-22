@@ -442,6 +442,16 @@ button {
     color: #2980b9;
 }
 
+.left-space-positive {
+    color: #27ae60;
+    font-weight: 600;
+}
+
+.left-space-negative {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
 .box-card {
     background: #f8f9fa;
     border: 2px dashed #bdc3c7;

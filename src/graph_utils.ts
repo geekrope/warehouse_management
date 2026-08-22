@@ -52,19 +52,19 @@ export function detect_cycle<T>(graph: Map<T, Map<T, number>>, labels: Map<T, nu
     return false;
 }
 
-export type AdjacencyList = {v: number, u: number}[];
+export type AdjacencyList<T = number> = { v: T, u: T }[];
 
-export type Vertex = number | "start";
+export type Vertex<T = number> = T | "start";
 
-export function build_graph(boxes: number[], weights: Map<number, number>, adjacency_list: AdjacencyList): Map<Vertex, Map<Vertex, number>> {
-    const start_node: Vertex = "start";
-    const graph = new Map<Vertex, Map<Vertex, number>>();
-    const orphans: Set<number> = new Set(boxes);
+export function build_graph<T>(boxes: T[], weights: Map<T, number>, adjacency_list: AdjacencyList<T>): Map<Vertex<T>, Map<Vertex<T>, number>> {
+    const start_node: Vertex<T> = "start";
+    const graph = new Map<Vertex<T>, Map<Vertex<T>, number>>();
+    const orphans: Set<T> = new Set(boxes);
 
-    graph.set(start_node, new Map<Vertex, number>());
+    graph.set(start_node, new Map<Vertex<T>, number>());
 
     for (const box of boxes) {
-        graph.set(box, new Map<Vertex, number>());
+        graph.set(box, new Map<Vertex<T>, number>());
     }
 
     for (const {v, u} of adjacency_list) {

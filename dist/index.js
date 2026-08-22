@@ -20,6 +20,7 @@ const navigate_action = new Map([
 ]);
 let db_manager = undefined;
 let categories = [];
+let boxes = [];
 function setup_navigation() {
     document.querySelectorAll('.nav-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -65,6 +66,20 @@ export async function reload_categories() {
     categories = await db_manager.get_categories();
     return categories;
 }
+export function get_boxes_list() {
+    return boxes;
+}
+export function get_box_titles() {
+    return boxes.map(box => box.title);
+}
+export function locate_box(box_title) {
+    return boxes.find(box => box.title === box_title);
+}
+export async function reload_boxes() {
+    db_manager = get_db_manager();
+    boxes = await db_manager.get_boxes();
+    return boxes;
+}
 export async function main() {
     try {
         if (!window.initSqlJs)
@@ -79,6 +94,7 @@ export async function main() {
         await driver.enable_foreign_keys();
         await db_manager.init_tables();
         await reload_categories();
+        await reload_boxes();
         init_backup();
         init_intake();
         init_item_management();

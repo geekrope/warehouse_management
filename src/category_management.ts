@@ -12,6 +12,7 @@ async function add_category() {
     const category_name = String(values["newCategory"] ?? "").trim();
     const category_weight = values["weight"];
     const category: Category = {
+        id: undefined,
         title: category_name,
         weight: (typeof category_weight == "number" && !isNaN(category_weight)) ? Number(category_weight) : null
     };
@@ -65,7 +66,7 @@ export async function init_category_management() {
 export async function refresh_category_management() {
     const categoriesList = document.getElementById("categoriesList") as HTMLDivElement | null;
     if (!categoriesList) return;
-    categoriesList.innerHTML = "";
+    categoriesList.textContent = "";
 
     const categories = await reload_categories();
 

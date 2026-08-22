@@ -73,7 +73,7 @@ export class CategoryInput {
         this.update_datalist();
     }
     update_datalist() {
-        this.datalist.innerHTML = "";
+        this.datalist.textContent = "";
         for (const cat of this.categories) {
             const option = document.createElement("option");
             option.value = cat;

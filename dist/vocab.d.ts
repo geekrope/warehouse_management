@@ -14,6 +14,8 @@ declare const LOCALES: {
         graph_box_label: string;
         th_box: string;
         th_weight: string;
+        th_max_load: string;
+        no_limit: string;
         th_access_cost: string;
         direct_access: string;
         categories_list_header: string;
@@ -22,6 +24,7 @@ declare const LOCALES: {
         add_category_btn: string;
         label_expiry: string;
         label_box: string;
+        box_placeholder: string;
         box: string;
         register_item_btn: string;
         label_status: string;
@@ -33,6 +36,8 @@ declare const LOCALES: {
         weight: string;
         header_box_add: string;
         label_add_box: string;
+        box_title_label: string;
+        label_max_load: string;
         add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
@@ -80,6 +85,8 @@ declare const LOCALES: {
         graph_box_label: string;
         th_box: string;
         th_weight: string;
+        th_max_load: string;
+        no_limit: string;
         th_access_cost: string;
         direct_access: string;
         categories_list_header: string;
@@ -88,6 +95,7 @@ declare const LOCALES: {
         add_category_btn: string;
         label_expiry: string;
         label_box: string;
+        box_placeholder: string;
         box: string;
         register_item_btn: string;
         label_status: string;
@@ -99,6 +107,8 @@ declare const LOCALES: {
         weight: string;
         header_box_add: string;
         label_add_box: string;
+        box_title_label: string;
+        label_max_load: string;
         add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
@@ -146,6 +156,8 @@ declare const LOCALES: {
         graph_box_label: string;
         th_box: string;
         th_weight: string;
+        th_max_load: string;
+        no_limit: string;
         th_access_cost: string;
         direct_access: string;
         categories_list_header: string;
@@ -154,6 +166,7 @@ declare const LOCALES: {
         add_category_btn: string;
         label_expiry: string;
         label_box: string;
+        box_placeholder: string;
         box: string;
         register_item_btn: string;
         label_status: string;
@@ -165,6 +178,8 @@ declare const LOCALES: {
         weight: string;
         header_box_add: string;
         label_add_box: string;
+        box_title_label: string;
+        label_max_load: string;
         add_box_btn: string;
         page_title_restore: string;
         header_restore: string;
@@ -212,6 +227,8 @@ declare const LOCALES: {
         graph_box_label: string;
         th_box: string;
         th_weight: string;
+        th_max_load: string;
+        no_limit: string;
         th_access_cost: string;
         direct_access: string;
         categories_list_header: string;
@@ -220,6 +237,7 @@ declare const LOCALES: {
         add_category_btn: string;
         label_expiry: string;
         label_box: string;
+        box_placeholder: string;
         box: string;
         register_item_btn: string;
         label_status: string;
@@ -231,6 +249,8 @@ declare const LOCALES: {
         weight: string;
         header_box_add: string;
         label_add_box: string;
+        box_title_label: string;
+        label_max_load: string;
         add_box_btn: string;
         page_title_restore: string;
         header_restore: string;

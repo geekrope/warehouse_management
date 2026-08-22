@@ -1,35 +1,32 @@
 import { Item, item_less } from "./types.js";
-import type { Category } from "./types.js";
 import { heapify, partial_heapsort } from "./heap.js";
 import { add_log_entry, get_element, CategoryInput, empty_container } from "./dom_utils.js";
-import { get_db_manager, get_category_titles, locate_category } from "./index.js";
+import { get_db_manager, get_category_titles, get_boxes_list, locate_category } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { dijkstra, build_graph, type AdjacencyList } from "./graph_utils.js";
 
 const page_size: number = 5;
 
-//TODO: think if storing the full category is necessary, or if just the title is enough
-
 let storage_category_input: CategoryInput | undefined = undefined;
 let heap_ptr = -1;
 let pages: Item[][] = [];
 let items_heap: Item[] = [];
-let current_category: Category | undefined = undefined;
+let current_category: string | undefined = undefined;
 let current_page: number = 0;
 let item_comparator: ((a: Item, b: Item) => boolean) = item_less;
 
-function get_item_comparator(weights: Map<number, number>, adjaceny_list: AdjacencyList): (a: Item, b: Item) => boolean {
-    const priorities = dijkstra(build_graph(Array.from(weights.keys()), weights, adjaceny_list), "start");
+function get_item_comparator(weights: Map<string, number>, adjacency_list: AdjacencyList<string>): (a: Item, b: Item) => boolean {
+    const priorities = dijkstra(build_graph(Array.from(weights.keys()), weights, adjacency_list), "start");
 
     return (a: Item, b: Item): boolean => {
         if (a.status != b.status) return a.status > b.status;
         if (a.expiration_date != b.expiration_date) return a.expiration_date < b.expiration_date;
-        
-        if(!priorities.has(a.box_id) || !priorities.has(b.box_id)) {
+
+        if (!priorities.has(a.box) || !priorities.has(b.box)) {
             return true;
         }
 
-        return priorities.get(a.box_id)! < priorities.get(b.box_id)!;
+        return priorities.get(a.box)! < priorities.get(b.box)!;
     }
 }
 
@@ -64,7 +61,7 @@ function render_item(item: Item): HTMLElement {
 
     const itemMeta = document.createElement("div");
     itemMeta.className = "item-meta";
-    itemMeta.textContent = `${renderPattern("box")} ${item.box_id}`;
+    itemMeta.textContent = `${renderPattern("box")} ${item.box}`;
 
     itemInfo.appendChild(itemCaption);
     itemInfo.appendChild(itemMeta);
@@ -141,7 +138,7 @@ export function render_current_page() {
 
     const total_pages = pages_count();
 
-    itemsList.innerHTML = "";
+    itemsList.textContent = "";
     if (total_pages === 0) {
         const emptyContainer = empty_container();
         itemsList.appendChild(emptyContainer);
@@ -153,7 +150,7 @@ export function render_current_page() {
     }
 
     const total_items = items_heap.length;
-    itemCategory.textContent = current_category != undefined ? renderPattern("selected_category", { category: current_category.title }) : renderPattern("no_category_selected");
+    itemCategory.textContent = current_category != undefined ? renderPattern("selected_category", { category: current_category }) : renderPattern("no_category_selected");
     itemCount.textContent = renderPattern("count_label", { count: total_items });
     pageIndicator.textContent = renderPattern("page_number", { num: `${total_pages === 0 ? 0 : current_page + 1}/${total_pages}` });
 
@@ -176,11 +173,11 @@ async function load_items() {
 
         if (current_category === undefined) { return; }
 
-        const items = await manager.get_items(current_category.title);
+        const items = await manager.get_items(current_category);
         items_heap = [...items];
         heap_ptr = items_heap.length - 1;
 
-        if(!item_comparator) throw new Error("Item comparator is not initialized");
+        if (!item_comparator) throw new Error("Item comparator is not initialized");
         heapify(items_heap, item_comparator);
     } catch (error) {
         console.error("Failed to load items:", error);
@@ -189,13 +186,29 @@ async function load_items() {
 
 async function refresh_item_comparator() {
     const manager = get_db_manager();
-    const box_adjacency = await manager.get_box_adjacency();
+    const boxes = get_boxes_list();
     const weights = await manager.get_box_weights();
-    const weights_map = new Map<number, number>(weights.map(entry => [entry.box_id, entry.total_weight]));
-    item_comparator = get_item_comparator(weights_map, box_adjacency);
+    const weights_map = new Map<string, number>(weights.map(entry => [entry.box, entry.total_weight]));
+
+    const adjacency_raw = await manager.get_box_adjacency();
+    const box_title_map = new Map<number, string>(boxes.map(box => {
+        if (box.id === undefined) throw new Error("Box ID is undefined");
+        return [box.id, box.title];
+    }));
+    const adjacency: AdjacencyList<string> = adjacency_raw.map(row => {
+        const v_title = box_title_map.get(row.v);
+        const u_title = box_title_map.get(row.u);
+        if (v_title === undefined || u_title === undefined) throw new Error(`Box ID not found in title map: v=${row.v}, u=${row.u}`);
+        return {
+            v: v_title,
+            u: u_title
+        }
+    });
+
+    item_comparator = get_item_comparator(weights_map, adjacency);
 }
 
-function update_selected_category(new_category: Category | undefined) {
+function update_selected_category(new_category: string | undefined) {
     current_category = new_category;
 }
 
@@ -207,7 +220,7 @@ export function init_item_management() {
         get_category_titles(),
         renderPattern("item_placeholder"),
         async (val) => {
-            update_selected_category(locate_category(val));
+            update_selected_category(locate_category(val)?.title);
             await load_items();
             render_current_page();
         }
@@ -238,8 +251,8 @@ export async function refresh_item_management() {
     const category_input = get_category_input();
     category_input.categories = get_category_titles();
 
-    update_selected_category(locate_category(current_category?.title ?? ""));
+    update_selected_category(locate_category(current_category ?? "")?.title);
     await refresh_item_comparator();
-    await load_items();    
+    await load_items();
     render_current_page();
 }

@@ -22,7 +22,7 @@ export class Item {
     }
 
     static from(item: any) {
-        if (!Item.validate(item)) { throw TypeError("Missing required properties: category, expiration_date, box_id") }
+        if (!Item.validate(item)) { throw TypeError("Missing required properties: category, expiration_date, box") }
         return new Item(item.category, item.expiration_date, item.box, item.status ?? 0, item.id ?? undefined);
     }
 }
@@ -35,11 +35,13 @@ export function item_less(a: Item, b: Item): boolean {
 }
 
 export type Category = {
+    id: number | undefined;
     title: string;
     weight: number | null;
 };
 
 export type Box = {
+    id: number | undefined;
     title: string;
     max_load: number | null;
 };

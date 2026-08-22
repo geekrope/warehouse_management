@@ -8,7 +8,7 @@ import { get_element } from "./dom_utils.js";
 import { init_boxes_management, refresh_boxes_management } from "./boxes_management.js";
 import { init_category_management, refresh_category_management } from "./category_management.js";
 import { init_dashboard, refresh_dashboard } from "./dashboard.js";
-import { type Category } from "./types.js";
+import { type Category, type Box } from "./types.js";
 
 declare global {
     interface Window {
@@ -30,6 +30,7 @@ const navigate_action: Map<Page, () => void> = new Map([
 
 let db_manager: DatabaseManager | undefined = undefined;
 let categories: Category[] = [];
+let boxes: Box[] = [];
 
 function setup_navigation(): void {
     document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -88,6 +89,25 @@ export async function reload_categories(): Promise<Category[]> {
     return categories;
 }
 
+export function get_boxes_list(): Box[] {
+    return boxes;
+}
+
+export function get_box_titles(): string[] {
+    return boxes.map(box => box.title);
+}
+
+export function locate_box(box_title: string): Box | undefined {
+    return boxes.find(box => box.title === box_title);
+}
+
+export async function reload_boxes(): Promise<Box[]> {
+    db_manager = get_db_manager();
+    boxes = await db_manager.get_boxes();
+
+    return boxes;
+}
+
 export async function main(): Promise<void> {
     try {
         if (!window.initSqlJs) throw new Error("SQL.js is not available. Ensure that the SQL.js library is loaded.");
@@ -105,6 +125,7 @@ export async function main(): Promise<void> {
         await driver.enable_foreign_keys();
         await db_manager.init_tables();
         await reload_categories();
+        await reload_boxes();
 
         init_backup();
         init_intake();
