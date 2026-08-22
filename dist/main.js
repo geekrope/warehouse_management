@@ -1,7 +1,6 @@
 import { Item } from "./types.js";
 import {} from "./types.js";
 import {} from "./graph_utils.js";
-//TODO: DRY
 export class DatabaseManager {
     db_driver;
     constructor(db_driver) {
@@ -10,12 +9,12 @@ export class DatabaseManager {
     async init_tables() {
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL UNIQUE,
+            title TEXT NOT NULL UNIQUE CHECK(length(trim(title)) > 0),
             weight REAL DEFAULT NULL,
             deleted BOOLEAN NOT NULL DEFAULT 0);`);
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS boxes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL UNIQUE,
+            title TEXT NOT NULL UNIQUE CHECK(length(trim(title)) > 0),
             max_load INTEGER DEFAULT NULL,
             deleted BOOLEAN NOT NULL DEFAULT 0);`);
         await this.db_driver.run(`CREATE TABLE IF NOT EXISTS items (
@@ -166,8 +165,8 @@ export class DatabaseManager {
     async get_box_weights() {
         return await this.db_driver.query(`SELECT B.title as box, SUM(COALESCE(C.weight, 0)) AS total_weight
             FROM boxes AS B
-            JOIN items AS I ON B.id = I.box_id AND I.remove_date IS NULL
-            JOIN categories AS C ON I.category_id = C.id
+            LEFT JOIN items AS I ON B.id = I.box_id AND I.remove_date IS NULL
+            LEFT JOIN categories AS C ON I.category_id = C.id
             GROUP BY B.id`, (obj) => { return { box: obj.box, total_weight: obj.total_weight }; });
     }
     async get_box_content(box) {
@@ -183,7 +182,7 @@ export class DatabaseManager {
             return;
         const values_clause = adjacency.map(() => "(?, ?)").join(", ");
         const values = adjacency.flatMap(({ v, u }) => [v, u]);
-        await this.db_driver.run(`INSERT INTO box_adjacency 
+        await this.db_driver.run(`INSERT OR IGNORE INTO box_adjacency 
             (v, u) 
             VALUES ${values_clause};`, values);
     }

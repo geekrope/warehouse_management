@@ -15,8 +15,6 @@ async function add_category() {
         weight: (typeof category_weight == "number" && !isNaN(category_weight)) ? Number(category_weight) : null
     };
     try {
-        if (category.title == "")
-            throw new Error("Category cannot be empty");
         if (get_categories_list().some(c => c.title === category.title))
             throw new Error("Category already exists");
         await manager.add_categories(category);

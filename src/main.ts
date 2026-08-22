@@ -3,8 +3,6 @@ import { Item } from "./types.js";
 import { type Category, type Box } from "./types.js";
 import { type AdjacencyList } from "./graph_utils.js";
 
-//TODO: DRY
-
 export class DatabaseManager {
     constructor(private db_driver: IDatabaseDriver) { }
 
@@ -12,14 +10,14 @@ export class DatabaseManager {
         await this.db_driver.run(
             `CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL UNIQUE,
+            title TEXT NOT NULL UNIQUE CHECK(length(trim(title)) > 0),
             weight REAL DEFAULT NULL,
             deleted BOOLEAN NOT NULL DEFAULT 0);`
         );
         await this.db_driver.run(
             `CREATE TABLE IF NOT EXISTS boxes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL UNIQUE,
+            title TEXT NOT NULL UNIQUE CHECK(length(trim(title)) > 0),
             max_load INTEGER DEFAULT NULL,
             deleted BOOLEAN NOT NULL DEFAULT 0);`
         );
@@ -238,8 +236,8 @@ export class DatabaseManager {
         return await this.db_driver.query<{ box: string, total_weight: number }>(
             `SELECT B.title as box, SUM(COALESCE(C.weight, 0)) AS total_weight
             FROM boxes AS B
-            JOIN items AS I ON B.id = I.box_id AND I.remove_date IS NULL
-            JOIN categories AS C ON I.category_id = C.id
+            LEFT JOIN items AS I ON B.id = I.box_id AND I.remove_date IS NULL
+            LEFT JOIN categories AS C ON I.category_id = C.id
             GROUP BY B.id`,
             (obj: any) => { return { box: obj.box as string, total_weight: obj.total_weight as number }; }
         );
@@ -265,7 +263,7 @@ export class DatabaseManager {
         const values = adjacency.flatMap(({ v, u }) => [v, u]);
 
         await this.db_driver.run(
-            `INSERT INTO box_adjacency 
+            `INSERT OR IGNORE INTO box_adjacency 
             (v, u) 
             VALUES ${values_clause};`,
             values

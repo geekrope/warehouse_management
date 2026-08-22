@@ -7,6 +7,8 @@ import { DummyPersistenceAdapter } from './persistence.js';*/
 /*type AssertFunc = (condition: boolean, name: string) => void;*/
 export const debug = true;
 
+//TODO: rewrite
+
 /*export function assertFactory() {
     let passed = 0;
     let total = 0;

@@ -3,6 +3,7 @@ import { get_db_manager, reload_boxes, get_box_titles } from "./index.js";
 import { renderPattern, repr } from "./vocab.js";
 import { Item, type Box } from "./types.js";
 import { refresh_boxes_graph, init_boxes_graph } from "./boxes_graph.js";
+import { heapify, partial_heapsort } from "./heap.js";
 
 //TODO: think if add/amend button should be added. same applies to categories management
 
@@ -246,11 +247,34 @@ export async function refresh_boxes_management(): Promise<void> {
         return;
     }
 
+    const comparator = (a: Item, b: Item): boolean => {
+        if(a.status != b.status) return a.status > b.status;
+        if(a.expiration_date != b.expiration_date) return a.expiration_date < b.expiration_date;
+
+        return a.category < b.category;
+    }
+    let current_category = "";
     // Use heap for sorting items by date, status and lexicographicaly by category
     for (const box of boxes) {
         const total_weight = weight_map.get(box.title) ?? 0;
         const items = await manager.get_box_content(box.title);
-        const item_elements = items.map(item => create_draggable_item_element(item));
+        const item_elements = []
+
+        heapify(items, comparator);
+        const sorted_items = partial_heapsort(items, items.length - 1, items.length, comparator).sorted;
+
+        for (const item of sorted_items) {
+            if (item.category !== current_category) {
+                current_category = item.category;
+                const category_header = document.createElement("span");
+                category_header.textContent = current_category;
+                category_header.style.fontWeight = "bold";
+                category_header.style.marginBottom = "10px";
+                item_elements.push(category_header);
+            }
+            item_elements.push(create_draggable_item_element(item));
+        }
+
         const box_el = new BoxElement(box.title, total_weight, item_elements);
         boxes_container.appendChild(box_el.container);
     }
@@ -277,7 +301,6 @@ export function init_boxes_management(): void {
                 const title = String(values["boxTitle"] ?? "").trim();
                 const max_load = typeof values["maxLoad"] === "number" && !isNaN(values["maxLoad"]) ? values["maxLoad"] : null;
 
-                if (!title) throw new Error("Box title is not initialized");
                 if (get_box_titles().includes(title)) throw new Error("Box already exists");
 
                 const box: Box = { id: undefined, title, max_load };
