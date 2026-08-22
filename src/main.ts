@@ -113,11 +113,11 @@ export class DatabaseManager {
     }
 
     public async add_categories(...categories: Category[]): Promise<void> {
-        this.add_objects("categories", categories);
+        await this.add_objects("categories", categories);
     }
 
     public async remove_category(title: string): Promise<void> {
-        this.remove_object("categories", title, "category_id");
+        await this.remove_object("categories", title, "category_id");
     }
 
     public async get_categories(): Promise<Category[]> {
@@ -171,7 +171,7 @@ export class DatabaseManager {
         const update_obj: Record<string, any> = { ...rest };
 
         if (category !== undefined) {
-            const category_map = await this.get_ids(category);
+            const category_map = await this.get_ids("categories", category);
             update_obj["category_id"] = await this.id_lookup(category_map, category);
         }
 
@@ -221,12 +221,12 @@ export class DatabaseManager {
     }
 
     public async add_boxes(...boxes: Box[]): Promise<void> {
-        this.add_objects("boxes", boxes);
+        await this.add_objects("boxes", boxes);
     }
 
     public async remove_box(box: string): Promise<void> {
-        this.remove_object("boxes", box, "box_id");
-        this.db_driver.run(
+        await this.remove_object("boxes", box, "box_id");
+        await this.db_driver.run(
             `DELETE FROM box_adjacency 
             WHERE v = (SELECT id FROM boxes WHERE title = :box) 
             OR u = (SELECT id FROM boxes WHERE title = :box);`,

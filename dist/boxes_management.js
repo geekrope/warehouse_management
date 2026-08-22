@@ -221,16 +221,23 @@ export function init_boxes_management() {
             required: false
         }
     ], renderPattern("add_box_btn"), async (values) => {
-        const title = String(values["boxTitle"] ?? "").trim();
-        const max_load = typeof values["maxLoad"] === "number" && !isNaN(values["maxLoad"]) ? values["maxLoad"] : null;
-        if (!title)
-            throw new Error("Box title is not initialized");
-        if (get_box_titles().includes(title))
-            throw new Error("Box already exists");
-        const box = { id: undefined, title, max_load };
-        const manager = get_db_manager();
-        await manager.add_boxes(box);
-        await refresh_boxes_management();
+        try {
+            const title = String(values["boxTitle"] ?? "").trim();
+            const max_load = typeof values["maxLoad"] === "number" && !isNaN(values["maxLoad"]) ? values["maxLoad"] : null;
+            if (!title)
+                throw new Error("Box title is not initialized");
+            if (get_box_titles().includes(title))
+                throw new Error("Box already exists");
+            const box = { id: undefined, title, max_load };
+            const manager = get_db_manager();
+            await manager.add_boxes(box);
+            await refresh_boxes_management();
+            add_log_entry(renderPattern("log_add_box", { title }), "boxesLog");
+        }
+        catch (err) {
+            console.error("Failed to add box:", err);
+            add_log_entry(renderPattern("log_add_box_fail", { error: String(err) }), "boxesLog", true);
+        }
     });
     const form_container = get_element("boxAddCard");
     form_container.appendChild(form.form);

@@ -42,6 +42,8 @@ const LOCALES = {
         box_title_label: "НАЗВАНИЕ ХАТЫ",
         label_max_load: "МАКС. ВЕС ХАТЫ",
         add_box_btn: "ДОБАВИТЬ ХАТУ",
+        log_add_box: "ЗАСЕКЛИ НОВУЮ ХАТУ \"{title}\".",
+        log_add_box_fail: "НЕ УДАЛОСЬ ДОБАВИТЬ ХАТУ: {error}",
 
         page_title_restore: "КУБЫШКА",
         header_restore: "КОНСПИРАТИВНАЯ ХАТА",
@@ -118,6 +120,8 @@ const LOCALES = {
         box_title_label: "BOX NAME",
         label_max_load: "MAX LOAD",
         add_box_btn: "ADD BOX",
+        log_add_box: "ADDED BOX \"{title}\".",
+        log_add_box_fail: "FAILED TO ADD BOX: {error}",
 
         page_title_restore: "BACKUP",
         header_restore: "DATA MANAGEMENT",
@@ -194,6 +198,8 @@ const LOCALES = {
         box_title_label: "НАЗВАНІЕ ПОЛКИ",
         label_max_load: "МАКС. ВѢСЪ ПОЛКИ",
         add_box_btn: "ДОБАВИТИ ПОЛКУ",
+        log_add_box: "ПОЛКА \"{title}\" УСТАНОВЛЕНА.",
+        log_add_box_fail: "НЕ УДАЛОСЬ УСТАНОВИТИ ПОЛКУ: {error}",
 
         page_title_restore: "КЛАДОВАЯ ПАМЯТИ",
         header_restore: "РАСПОРЯЖЕНIЕ ДОБРОМЪ",
@@ -270,6 +276,8 @@ const LOCALES = {
         box_title_label: "НАЗВАНИЕ ЯЧЕЙКИ",
         label_max_load: "МАКС. НАГРУЗКА",
         add_box_btn: "ДОБАВИТЬ ЯЧЕЙКУ",
+        log_add_box: "ЯЧЕЙКА \"{title}\" ДОБАВЛЕНА.",
+        log_add_box_fail: "НЕ УДАЛОСЬ ДОБАВИТЬ ЯЧЕЙКУ: {error}",
 
         page_title_restore: "РЕЗЕРВНОЕ КОПИРОВАНИЕ",
         header_restore: "УПРАВЛЕНИЕ ДАННЫМИ",

@@ -82,10 +82,10 @@ export class DatabaseManager {
         }
     }
     async add_categories(...categories) {
-        this.add_objects("categories", categories);
+        await this.add_objects("categories", categories);
     }
     async remove_category(title) {
-        this.remove_object("categories", title, "category_id");
+        await this.remove_object("categories", title, "category_id");
     }
     async get_categories() {
         return await this.db_driver.query(`SELECT id, title, weight 
@@ -123,7 +123,7 @@ export class DatabaseManager {
         const { category, box, id: _id, ...rest } = args;
         const update_obj = { ...rest };
         if (category !== undefined) {
-            const category_map = await this.get_ids(category);
+            const category_map = await this.get_ids("categories", category);
             update_obj["category_id"] = await this.id_lookup(category_map, category);
         }
         if (box !== undefined) {
@@ -155,11 +155,11 @@ export class DatabaseManager {
             ORDER BY title ASC;`, (obj) => { return { id: obj.id, title: obj.title, max_load: isNaN(Number(obj.max_load)) ? null : Number(obj.max_load) }; });
     }
     async add_boxes(...boxes) {
-        this.add_objects("boxes", boxes);
+        await this.add_objects("boxes", boxes);
     }
     async remove_box(box) {
-        this.remove_object("boxes", box, "box_id");
-        this.db_driver.run(`DELETE FROM box_adjacency 
+        await this.remove_object("boxes", box, "box_id");
+        await this.db_driver.run(`DELETE FROM box_adjacency 
             WHERE v = (SELECT id FROM boxes WHERE title = :box) 
             OR u = (SELECT id FROM boxes WHERE title = :box);`, { ":box": box }); // cascade delete box connections
     }

@@ -35,5 +35,5 @@ export function init_backup() {
     importBtn.onclick = import_backup;
     exportBtn.onclick = export_backup;
 
-    add_log_entry(renderPattern("log_export"), "backupLog");
+    add_log_entry(renderPattern("initial_log"), "backupLog");
 }
